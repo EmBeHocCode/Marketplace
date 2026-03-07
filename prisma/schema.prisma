@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ProductType {
+  VPS
+  CLOUD
+  GIFTCARD
+  GAMECARD
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  VNPAY
+  MOMO
+  ZALOPAY
+  CRYPTO
+  BANK_TRANSFER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum BannerPlacement {
+  HERO
+  SIDEBAR
+  PROMOTION
+}
+
+enum GiftCardCodeStatus {
+  AVAILABLE
+  SOLD
+  USED
+}
+
+enum VpsInstanceStatus {
+  PROVISIONING
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  passwordHash   String
+  fullName       String
+  avatar         String?
+  phone          String?
+  role           UserRole        @default(USER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  orders         Order[]
+  reviews        Review[]
+  supportTickets SupportTicket[]
+  wishlist       WishlistItem[]
+  vpsInstances   VpsInstance[]
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  icon        String?
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  products    Product[]
+}
+
+model Product {
+  id               String         @id @default(cuid())
+  name             String
+  slug             String         @unique
+  shortDescription String
+  description      String
+  price            Decimal        @db.Decimal(12, 2)
+  compareAtPrice   Decimal?       @db.Decimal(12, 2)
+  stock            Int            @default(0)
+  rating           Float          @default(0)
+  reviewsCount     Int            @default(0)
+  productType      ProductType
+  isFeatured       Boolean        @default(false)
+  isHot            Boolean        @default(false)
+  isPromotion      Boolean        @default(false)
+  image            String?
+  cpu              String?
+  ram              String?
+  storage          String?
+  bandwidth        String?
+  operatingSystem  String?
+  metadata         Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  categoryId       String
+  category         Category       @relation(fields: [categoryId], references: [id])
+  orderItems       OrderItem[]
+  reviews          Review[]
+  giftCardCodes    GiftCardCode[]
+  vpsInstances     VpsInstance[]
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  orderCode      String       @unique
+  status         OrderStatus  @default(PENDING)
+  subtotal       Decimal      @db.Decimal(12, 2)
+  discount       Decimal      @default(0) @db.Decimal(12, 2)
+  total          Decimal      @db.Decimal(12, 2)
+  note           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completedAt    DateTime?
+  userId         String
+  couponId       String?
+  user           User         @relation(fields: [userId], references: [id])
+  coupon         Coupon?      @relation(fields: [couponId], references: [id])
+  items          OrderItem[]
+  payment        Payment?
+  assignedCodes  GiftCardCode[]
+  provisionedVps VpsInstance[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  quantity   Int      @default(1)
+  unitPrice  Decimal  @db.Decimal(12, 2)
+  totalPrice Decimal  @db.Decimal(12, 2)
+  metadata   Json?
+  orderId    String
+  productId  String
+  order      Order    @relation(fields: [orderId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  providerRef     String?
+  providerPayload Json?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orderId         String        @unique
+  order           Order         @relation(fields: [orderId], references: [id])
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  description   String?
+  discountType  String
+  discountValue Decimal   @db.Decimal(10, 2)
+  minOrderValue Decimal?  @db.Decimal(10, 2)
+  maxDiscount   Decimal?  @db.Decimal(10, 2)
+  startsAt      DateTime
+  endsAt        DateTime
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+}
+
+model SupportTicket {
+  id         String          @id @default(cuid())
+  subject    String
+  content    String
+  status     TicketStatus    @default(OPEN)
+  priority   String          @default("normal")
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  userId     String
+  user       User            @relation(fields: [userId], references: [id])
+  messages   TicketMessage[]
+}
+
+model TicketMessage {
+  id         String        @id @default(cuid())
+  body       String
+  createdAt  DateTime      @default(now())
+  ticketId   String
+  senderType String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int
+  title      String?
+  content    String
+  createdAt  DateTime @default(now())
+  userId     String
+  productId  String
+  user       User     @relation(fields: [userId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Banner {
+  id          String          @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String?
+  image       String?
+  ctaLabel    String?
+  ctaLink     String?
+  placement   BannerPlacement
+  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model GiftCardCode {
+  id         String             @id @default(cuid())
+  code       String             @unique
+  status     GiftCardCodeStatus @default(AVAILABLE)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  productId  String
+  orderId    String?
+  product    Product            @relation(fields: [productId], references: [id])
+  order      Order?             @relation(fields: [orderId], references: [id])
+}
+
+model VpsInstance {
+  id         String            @id @default(cuid())
+  ipAddress  String
+  username   String
+  password   String
+  panelUrl   String?
+  status     VpsInstanceStatus @default(PROVISIONING)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  userId     String
+  productId  String
+  orderId    String?
+  user       User              @relation(fields: [userId], references: [id])
+  product    Product           @relation(fields: [productId], references: [id])
+  order      Order?            @relation(fields: [orderId], references: [id])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  productId String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+}

@@ -1,0 +1,91 @@
+"use client";
+
+import { useMemo } from "react";
+import { useCartStore } from "@/hooks/use-cart-store";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { OrderSummary } from "@/components/forms/order-summary";
+import { getOrderTotals } from "@/services/order-service";
+import { formatCurrency } from "@/utils/format";
+
+export function CartPage() {
+  const { items, couponCode, updateQuantity, removeItem, setCouponCode } = useCartStore();
+
+  const totals = useMemo(
+    () =>
+      getOrderTotals(
+        items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity
+        })),
+        couponCode
+      ),
+    [items, couponCode]
+  );
+
+  if (!items.length) {
+    return (
+      <EmptyState
+        title="Giỏ hàng đang trống"
+        description="Thêm vài dịch vụ số để bắt đầu đơn hàng mới."
+        ctaLabel="Khám phá sản phẩm"
+      />
+    );
+  }
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="space-y-4">
+        {items.map((item) => (
+          <Card key={item.productId} className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-lg font-bold text-ink">{item.name}</p>
+              <p className="mt-1 text-sm text-muted">{item.type}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <input
+                type="number"
+                min={1}
+                value={item.quantity}
+                onChange={(event) => updateQuantity(item.productId, Number(event.target.value))}
+                className="w-20 rounded-2xl border border-rose-100 px-3 py-2 outline-none"
+              />
+              <p className="w-32 text-right font-semibold text-ink">
+                {formatCurrency(item.price * item.quantity)}
+              </p>
+              <button
+                type="button"
+                onClick={() => removeItem(item.productId)}
+                className="rounded-full bg-rose-50 px-4 py-2 text-sm font-semibold text-primary"
+              >
+                Xóa
+              </button>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <div className="space-y-4">
+        <Card>
+          <h3 className="text-xl font-bold text-ink">Mã giảm giá</h3>
+          <div className="mt-4 flex gap-3">
+            <input
+              value={couponCode}
+              onChange={(event) => setCouponCode(event.target.value)}
+              placeholder="Nhập mã giảm giá"
+              className="w-full rounded-2xl border border-rose-100 px-4 py-3 outline-none"
+            />
+          </div>
+        </Card>
+        <OrderSummary
+          subtotal={totals.subtotal}
+          discount={totals.discount}
+          total={totals.total}
+        />
+        <Button href="/checkout" className="w-full">
+          Tiến hành thanh toán
+        </Button>
+      </div>
+    </div>
+  );
+}

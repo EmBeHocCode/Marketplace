@@ -1,0 +1,45 @@
+import { z } from "zod";
+
+export const loginSchema = z.object({
+  email: z.string().email("Email không hợp lệ"),
+  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+  role: z.enum(["USER", "ADMIN"])
+});
+
+export const registerSchema = z
+  .object({
+    fullName: z.string().min(2, "Nhập họ tên"),
+    email: z.string().email("Email không hợp lệ"),
+    phone: z.string().min(10, "Số điện thoại không hợp lệ"),
+    password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+    confirmPassword: z.string().min(6, "Xác nhận mật khẩu")
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Mật khẩu xác nhận chưa khớp",
+    path: ["confirmPassword"]
+  });
+
+export const contactSchema = z.object({
+  fullName: z.string().min(2, "Nhập họ tên"),
+  email: z.string().email("Email không hợp lệ"),
+  phone: z.string().min(10, "Số điện thoại không hợp lệ"),
+  message: z.string().min(10, "Tin nhắn quá ngắn")
+});
+
+export const ticketSchema = z.object({
+  subject: z.string().min(4, "Nhập tiêu đề ticket"),
+  category: z.string().min(2, "Chọn danh mục"),
+  message: z.string().min(10, "Mô tả chi tiết hơn")
+});
+
+export const checkoutSchema = z.object({
+  fullName: z.string().min(2, "Nhập họ tên"),
+  email: z.string().email("Email không hợp lệ"),
+  phone: z.string().min(10, "Số điện thoại không hợp lệ"),
+  paymentMethod: z.enum(["VNPAY", "MOMO", "ZALOPAY", "CRYPTO"]),
+  note: z.string().optional()
+});
+
+export const orderLookupSchema = z.object({
+  orderCode: z.string().min(5, "Nhập mã đơn hàng")
+});
