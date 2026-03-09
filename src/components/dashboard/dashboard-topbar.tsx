@@ -8,6 +8,15 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { Card } from "@/components/ui/card";
 
 function toLabel(part: string) {
+  const labelMap: Record<string, string> = {
+    account: "Tài khoản",
+    security: "Đổi mật khẩu"
+  };
+
+  if (labelMap[part]) {
+    return labelMap[part];
+  }
+
   return part
     .replace(/-/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
@@ -17,7 +26,15 @@ export function DashboardTopbar({ rootLabel }: { rootLabel: string }) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbItems = [
-    { label: rootLabel, href: segments[0] === "admin" ? "/admin" : "/profile" },
+    {
+      label: rootLabel,
+      href:
+        segments[0] === "admin"
+          ? "/admin"
+          : segments[0] === "staff"
+            ? "/staff"
+            : "/profile"
+    },
     ...segments.slice(1).map((segment, index) => ({
       label: toLabel(segment),
       href:

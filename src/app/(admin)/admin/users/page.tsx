@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Table } from "@/components/dashboard/table";
 import { getUsers } from "@/services/user-service";
+import { getRoleLabel } from "@/utils/auth";
 import { formatDate } from "@/utils/format";
 
 export default async function AdminUsersRoute() {
@@ -14,7 +15,7 @@ export default async function AdminUsersRoute() {
         rows={users.map((user) => [
           user.fullName,
           user.email,
-          <Badge key={user.id} label={user.role === "ADMIN" ? "Quản trị viên" : "Khách hàng"} />,
+          <Badge key={user.id} label={getRoleLabel(user.role)} />,
           formatDate(user.joinedAt)
         ])}
       />

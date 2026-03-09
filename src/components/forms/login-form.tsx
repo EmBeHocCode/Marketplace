@@ -10,6 +10,21 @@ import type { LoginFormValues } from "@/types/forms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { serializeSessionUser } from "@/services/auth-service";
+import { getDashboardHrefByRole } from "@/utils/auth";
+
+async function getSafeJsonPayload<T>(response: Response) {
+  const responseText = await response.text();
+
+  if (!responseText) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(responseText) as T;
+  } catch {
+    return null;
+  }
+}
 
 export function LoginForm({
   presetEmail,
@@ -57,30 +72,54 @@ export function LoginForm({
   const onSubmit = async (values: LoginFormValues) => {
     setServerMessage("");
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(values)
-    });
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(values)
+      });
 
-    const payload = await response.json();
+      const payload = await getSafeJsonPayload<{
+        success?: boolean;
+        message?: string;
+        user?: {
+          id: string;
+          fullName: string;
+          email: string;
+          phone: string;
+          role: "USER" | "STAFF" | "ADMIN";
+          avatar: string;
+        };
+        session?: {
+          token: string;
+          role: "USER" | "STAFF" | "ADMIN";
+          expiresAt: string;
+        };
+      }>(response);
 
-    if (!response.ok || !payload.success) {
+      if (!response.ok || !payload?.success || !payload.user || !payload.session) {
+        setMessageTone("error");
+        setServerMessage(
+          payload?.message ??
+            "Không thể đăng nhập lúc này. Hãy kiểm tra cơ sở dữ liệu hoặc thử lại sau."
+        );
+        return;
+      }
+
+      document.cookie = `meowmarket-session=${payload.session.token}; path=/`;
+      document.cookie = `meowmarket-role=${payload.user.role}; path=/`;
+      document.cookie = `meowmarket-user=${serializeSessionUser(payload.user)}; path=/`;
+
+      setMessageTone("success");
+      setServerMessage("Đăng nhập thành công. Đang chuyển hướng...");
+      router.push(redirect ?? getDashboardHrefByRole(payload.user.role) ?? "/profile");
+      router.refresh();
+    } catch {
       setMessageTone("error");
-      setServerMessage(payload.message ?? "Đăng nhập thất bại.");
-      return;
+      setServerMessage("Không thể kết nối tới máy chủ đăng nhập. Hãy thử lại sau.");
     }
-
-    document.cookie = `meowmarket-session=${payload.session.token}; path=/`;
-    document.cookie = `meowmarket-role=${payload.user.role}; path=/`;
-    document.cookie = `meowmarket-user=${serializeSessionUser(payload.user)}; path=/`;
-
-    setMessageTone("success");
-    setServerMessage("Đăng nhập thành công. Đang chuyển hướng...");
-    router.push(redirect ?? (payload.user.role === "ADMIN" ? "/admin" : "/profile"));
-    router.refresh();
   };
 
   return (
@@ -88,7 +127,7 @@ export function LoginForm({
       <div className="space-y-2">
         <h1 className="text-3xl font-black text-ink">Đăng nhập MeowMarket</h1>
         <p className="text-sm leading-7 text-muted">
-          Dùng email và mật khẩu để đăng nhập. Hệ thống sẽ tự nhận diện tài khoản khách hàng hoặc quản trị viên.
+          Dùng email và mật khẩu để đăng nhập. Hệ thống sẽ tự nhận diện tài khoản khách hàng, nhân viên hoặc quản trị viên.
         </p>
       </div>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>

@@ -20,6 +20,22 @@ export const registerSchema = z
     path: ["confirmPassword"]
   });
 
+export const accountSettingsSchema = z.object({
+  fullName: z.string().trim().min(2, "Nhập họ tên"),
+  phone: z.string().trim().min(10, "Số điện thoại không hợp lệ")
+});
+
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(6, "Nhập mật khẩu hiện tại"),
+    newPassword: z.string().min(6, "Mật khẩu mới tối thiểu 6 ký tự"),
+    confirmPassword: z.string().min(6, "Nhập lại mật khẩu mới")
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: "Mật khẩu xác nhận chưa khớp",
+    path: ["confirmPassword"]
+  });
+
 export const contactSchema = z.object({
   fullName: z.string().min(2, "Nhập họ tên"),
   email: z.string().email("Email không hợp lệ"),

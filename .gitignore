@@ -7,3 +7,4 @@ dist
 prisma/dev.db
 data/mock-auth-users.json
 tsconfig.tsbuildinfo
+public/uploads-temp/

@@ -6,15 +6,6 @@ import { runSafeDbQuery } from "@/services/db-utils";
 import { mapPrismaUser } from "@/services/sql-mappers";
 import type { User, UserRole as DomainUserRole } from "@/types/domain";
 
-function getUserAvatarInitials(fullName: string) {
-  return fullName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
 }
@@ -95,7 +86,7 @@ export async function registerUser(input: {
       passwordHash: await hashPassword(input.password),
       fullName: input.fullName,
       phone: input.phone,
-      avatarUrl: getUserAvatarInitials(input.fullName),
+      avatarUrl: null,
       role: (input.role ?? "USER") as UserRole,
       status: UserStatus.ACTIVE,
       notificationsEnabled: true
@@ -145,6 +136,93 @@ export async function getUserBySessionToken(sessionToken: string) {
   }
 
   return mapPrismaUser(session.user);
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: {
+    fullName: string;
+    phone: string;
+  }
+) {
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!existingUser) {
+    return null;
+  }
+
+  const updatedUser = await prisma.$transaction(async (transaction) => {
+    const user = await transaction.user.update({
+      where: { id: userId },
+      data: {
+        fullName: input.fullName.trim(),
+        phone: input.phone.trim()
+      }
+    });
+
+    await transaction.auditLog.create({
+      data: {
+        actorId: userId,
+        action: "UPDATE_PROFILE",
+        resource: "User",
+        resourceId: userId,
+        detail: `Cập nhật thông tin tài khoản: ${input.fullName.trim()} / ${input.phone.trim()}.`
+      }
+    });
+
+    return user;
+  });
+
+  return mapPrismaUser(updatedUser);
+}
+
+export async function changeUserPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    return { error: "Không tìm thấy tài khoản cần đổi mật khẩu." as const };
+  }
+
+  const passwordMatches = await comparePassword(currentPassword, user.passwordHash);
+
+  if (!passwordMatches) {
+    return { error: "Mật khẩu hiện tại chưa đúng." as const };
+  }
+
+  const reusedPassword = await comparePassword(newPassword, user.passwordHash);
+
+  if (reusedPassword) {
+    return { error: "Mật khẩu mới cần khác mật khẩu hiện tại." as const };
+  }
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await hashPassword(newPassword)
+      }
+    });
+
+    await transaction.auditLog.create({
+      data: {
+        actorId: userId,
+        action: "CHANGE_PASSWORD",
+        resource: "User",
+        resourceId: userId,
+        detail: "Người dùng đã tự đổi mật khẩu tài khoản."
+      }
+    });
+  });
+
+  return { success: true as const };
 }
 
 export async function deleteSession(sessionToken: string) {

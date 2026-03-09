@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,17 +9,29 @@ import {
   faCartShopping,
   faChevronDown,
   faHeadset,
-  faRightFromBracket,
-  faUserCircle
+  faRightFromBracket
 } from "@fortawesome/free-solid-svg-icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { publicNavItems } from "@/config/site";
 import { Logo } from "@/components/layout/logo";
 import { MegaMenu } from "@/components/layout/mega-menu";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { NotificationDropdown } from "@/components/shared/notification-dropdown";
 import { SearchBar } from "@/components/ui/search-bar";
-import { getCurrentUserFromSession, parseSessionUser } from "@/services/auth-service";
+import {
+  getCurrentUserFromSession,
+  parseSessionUser,
+  sessionUserUpdatedEventName,
+  type SessionUserCookie
+} from "@/services/auth-service";
 import type { User } from "@/types/domain";
+import {
+  getAccountHrefByRole,
+  getDashboardHrefByRole,
+  getRoleLabel,
+  getSecurityHrefByRole,
+  isManagementRole
+} from "@/utils/auth";
 
 function getCookieValue(name: string) {
   if (typeof document === "undefined") {
@@ -34,6 +46,7 @@ function getCookieValue(name: string) {
 export function MainHeader() {
   const closeDelay = 160;
   const router = useRouter();
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -79,7 +92,7 @@ export function MainHeader() {
 
   useEffect(() => {
     const sessionEmail = getCookieValue("meowmarket-session");
-    const role = getCookieValue("meowmarket-role") as "USER" | "ADMIN" | "";
+    const role = getCookieValue("meowmarket-role") as "USER" | "STAFF" | "ADMIN" | "";
     const cookieUser = parseSessionUser(getCookieValue("meowmarket-user"));
     setCurrentUser(
       cookieUser
@@ -95,6 +108,31 @@ export function MainHeader() {
           }
         : getCurrentUserFromSession(sessionEmail, role || undefined)
     );
+  }, []);
+
+  useEffect(() => {
+    const handleSessionUserUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<SessionUserCookie>).detail;
+
+      if (!detail?.email) {
+        return;
+      }
+
+      setCurrentUser({
+        id: detail.id ?? detail.email,
+        fullName: detail.fullName,
+        email: detail.email,
+        phone: detail.phone,
+        avatar: detail.avatar,
+        role: detail.role,
+        status: "ACTIVE",
+        joinedAt: new Date().toISOString()
+      });
+    };
+
+    window.addEventListener(sessionUserUpdatedEventName, handleSessionUserUpdated);
+    return () =>
+      window.removeEventListener(sessionUserUpdatedEventName, handleSessionUserUpdated);
   }, []);
 
   useEffect(() => {
@@ -136,8 +174,12 @@ export function MainHeader() {
     router.refresh();
   };
 
-  const userRoleLabel = currentUser?.role === "ADMIN" ? "Quản trị viên" : "Khách hàng";
-  const dashboardHref = currentUser?.role === "ADMIN" ? "/admin" : "/profile";
+  const userRoleLabel = currentUser ? getRoleLabel(currentUser.role) : "";
+  const dashboardHref = getDashboardHrefByRole(currentUser?.role);
+  const accountHref = getAccountHrefByRole(currentUser?.role);
+  const securityHref = getSecurityHrefByRole(currentUser?.role);
+  const showDashboardLink = isManagementRole(currentUser?.role);
+  const logoHref = pathname === "/" ? "/" : "/marketplace";
 
   return (
     <header
@@ -149,7 +191,7 @@ export function MainHeader() {
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:px-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <Logo />
+          <Logo href={logoHref} />
           <div className="order-3 lg:order-none lg:flex-1 lg:px-8">
             <SearchBar />
           </div>
@@ -249,7 +291,13 @@ export function MainHeader() {
                     }
                   }}
                 >
-                  <FontAwesomeIcon icon={faUserCircle} className="h-6 w-6 text-primary" />
+                  <UserAvatar
+                    fullName={currentUser.fullName}
+                    avatar={currentUser.avatar}
+                    size={36}
+                    className="bg-rose-100 text-primary shadow-none"
+                    textClassName="text-sm"
+                  />
                   <div className="hidden text-left text-sm lg:block">
                     <p className="font-semibold text-ink">{currentUser.fullName}</p>
                     <p className="text-muted">{userRoleLabel}</p>
@@ -265,12 +313,28 @@ export function MainHeader() {
                       className="absolute right-0 top-full z-30 pt-3"
                     >
                       <div className="w-60 rounded-[24px] border border-white/80 bg-white p-3 shadow-premium">
+                        {showDashboardLink && dashboardHref ? (
+                          <Link
+                            href={dashboardHref}
+                            onClick={() => closeAllMenus()}
+                            className="block rounded-2xl px-4 py-3 text-sm font-medium text-ink transition hover:bg-rose-50"
+                          >
+                            Đi tới bảng điều khiển
+                          </Link>
+                        ) : null}
                         <Link
-                          href={dashboardHref}
+                          href={accountHref}
                           onClick={() => closeAllMenus()}
-                          className="block rounded-2xl px-4 py-3 text-sm font-medium text-ink transition hover:bg-rose-50"
+                          className={`${showDashboardLink ? "mt-1" : ""} block rounded-2xl px-4 py-3 text-sm font-medium text-ink transition hover:bg-rose-50`}
                         >
-                          Đi tới bảng điều khiển
+                          Thông tin tài khoản
+                        </Link>
+                        <Link
+                          href={securityHref}
+                          onClick={() => closeAllMenus()}
+                          className="mt-1 block rounded-2xl px-4 py-3 text-sm font-medium text-ink transition hover:bg-rose-50"
+                        >
+                          Đổi mật khẩu
                         </Link>
                         <button
                           type="button"

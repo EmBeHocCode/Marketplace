@@ -1,5 +1,12 @@
 import type { User } from "@/types/domain";
 
+export type SessionUserCookie = Pick<
+  User,
+  "id" | "fullName" | "email" | "phone" | "role" | "avatar"
+>;
+
+export const sessionUserUpdatedEventName = "meowmarket-session-user-updated";
+
 export function getUserAvatarInitials(fullName: string) {
   return fullName
     .trim()
@@ -9,7 +16,7 @@ export function getUserAvatarInitials(fullName: string) {
     .join("");
 }
 
-export function getCurrentUser(_role: "USER" | "ADMIN" = "USER") {
+export function getCurrentUser(_role: "USER" | "STAFF" | "ADMIN" = "USER") {
   return null;
 }
 
@@ -23,13 +30,13 @@ export function getUserByEmail(_email: string) {
 
 export function getCurrentUserFromSession(
   _sessionEmail?: string,
-  _role?: "USER" | "ADMIN"
+  _role?: "USER" | "STAFF" | "ADMIN"
 ) {
   return null;
 }
 
 export function serializeSessionUser(
-  user: Pick<User, "id" | "fullName" | "email" | "phone" | "role" | "avatar">
+  user: SessionUserCookie
 ) {
   return encodeURIComponent(
     JSON.stringify({
@@ -49,10 +56,7 @@ export function parseSessionUser(serialized?: string | null) {
   }
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(serialized)) as Pick<
-      User,
-      "id" | "fullName" | "email" | "phone" | "role" | "avatar"
-    >;
+    const parsed = JSON.parse(decodeURIComponent(serialized)) as SessionUserCookie;
 
     if (!parsed.email || !parsed.fullName || !parsed.role) {
       return null;
@@ -71,6 +75,6 @@ export function parseSessionUser(serialized?: string | null) {
   }
 }
 
-export function authenticateMockUser(_email: string, _role: "USER" | "ADMIN") {
+export function authenticateMockUser(_email: string, _role: "USER" | "STAFF" | "ADMIN") {
   return null;
 }

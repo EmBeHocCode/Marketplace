@@ -31,3 +31,14 @@ export interface CheckoutFormValues {
   paymentMethod: "VNPAY" | "MOMO" | "ZALOPAY" | "CRYPTO";
   note?: string;
 }
+
+export interface AccountSettingsFormValues {
+  fullName: string;
+  phone: string;
+}
+
+export interface PasswordChangeFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}

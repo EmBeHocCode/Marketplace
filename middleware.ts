@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const protectedRoutes = [
-  { prefix: "/profile", roles: ["USER", "ADMIN"] },
+  { prefix: "/profile", roles: ["USER"] },
+  { prefix: "/staff", roles: ["STAFF", "ADMIN"] },
   { prefix: "/admin", roles: ["ADMIN"] }
 ];
 
@@ -21,9 +22,6 @@ export function middleware(request: NextRequest) {
   if (!sessionCookie || !role || !matchedRoute.roles.includes(role)) {
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("redirect", pathname);
-    if (matchedRoute.prefix === "/admin") {
-      redirectUrl.searchParams.set("role", "ADMIN");
-    }
     if (searchParams.size) {
       redirectUrl.searchParams.set("fromQuery", "1");
     }
@@ -34,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/profile/:path*", "/admin/:path*"]
+  matcher: ["/profile/:path*", "/staff/:path*", "/admin/:path*"]
 };

@@ -5,6 +5,10 @@ export const acceptedImageMimeTypes = [
   "image/svg+xml"
 ];
 
+export const acceptedAvatarMimeTypes = acceptedImageMimeTypes.filter(
+  (mimeType) => mimeType !== "image/svg+xml"
+);
+
 export const maxUploadSizeInBytes = 5 * 1024 * 1024;
 
 export const mediaUsageOptions = [

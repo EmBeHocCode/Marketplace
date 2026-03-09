@@ -14,9 +14,12 @@ MeowMarket là marketplace dịch vụ số cho thị trường Việt Nam, xây
 
 Project đã có:
 
+- landing page giới thiệu tại `/`
+- marketplace homepage riêng tại `/marketplace`
 - public storefront
 - auth pages
 - user dashboard
+- staff dashboard
 - admin dashboard
 - Next.js API routes
 - Prisma schema cho PostgreSQL
@@ -33,6 +36,30 @@ Trạng thái dữ liệu hiện tại:
 - homepage metrics, admin charts và các thống kê chính đều tính từ dữ liệu SQL
 - seed hiện có sẵn dữ liệu mẫu nên web không bị trống
 - phần còn dùng mock chủ yếu là AI tools demo
+
+## Tính năng mới đã triển khai
+
+- landing page mới ở `/` với CTA dẫn về `/marketplace`
+- homepage marketplace cũ được giữ nguyên và chuyển sang `/marketplace`
+- hệ `SectionBox` cho landing page để phân nhóm section rõ hơn, giảm cảm giác trắng phẳng
+- bộ illustration SVG pastel cho hero, dịch vụ chính, promotion, trust và CTA cuối trang
+- user có thể đổi avatar và crop ảnh trước khi lưu
+- admin có trang:
+  - `/admin/account`
+  - `/admin/security`
+- staff role và staff dashboard riêng:
+  - `/staff`
+  - `/staff/account`
+  - `/staff/security`
+  - `/staff/orders`
+  - `/staff/payments`
+  - `/staff/tickets`
+  - `/staff/giftcards`
+  - `/staff/services`
+  - `/staff/notifications`
+- dropdown đăng nhập đã bỏ chọn role thủ công, hệ thống tự xác định quyền theo tài khoản
+- admin dashboard có thêm mục `Quản lý SQL`
+- thêm script `npm run dev:reset` để xử lý lỗi cache/chunk của Next.js khi dev
 
 ## Tech stack
 
@@ -58,6 +85,7 @@ Trạng thái dữ liệu hiện tại:
     /(auth)
     /(dashboard)
     /(admin)
+    /(staff)
     /api
   /components
     /ui
@@ -97,6 +125,7 @@ Trạng thái dữ liệu hiện tại:
 ### Public
 
 - `/`
+- `/marketplace`
 - `/products`
 - `/products/[slug]`
 - `/search`
@@ -136,6 +165,8 @@ Trạng thái dữ liệu hiện tại:
 ### Admin
 
 - `/admin`
+- `/admin/account`
+- `/admin/security`
 - `/admin/products`
 - `/admin/categories`
 - `/admin/banners`
@@ -152,6 +183,18 @@ Trạng thái dữ liệu hiện tại:
 - `/admin/audit-log`
 - `/admin/ai-tools`
 - `/admin/settings`
+
+### Staff
+
+- `/staff`
+- `/staff/account`
+- `/staff/security`
+- `/staff/orders`
+- `/staff/payments`
+- `/staff/tickets`
+- `/staff/giftcards`
+- `/staff/services`
+- `/staff/notifications`
 
 ## Dữ liệu và kiến trúc
 
@@ -212,6 +255,9 @@ Tài khoản mới đăng ký sẽ:
 - User
   - email: `user@meowmarket.vn`
   - password: `123456`
+- Staff
+  - email: `staff@meowmarket.vn`
+  - password: `123456`
 - Admin
   - email: `admin@meowmarket.vn`
   - password: `123456`
@@ -236,6 +282,17 @@ Project đang expose ra browser theo các file:
 Metadata favicon nằm tại:
 
 - `src/app/layout.tsx`
+
+Illustration landing page hiện nằm tại:
+
+- `public/images/illustrations/hero-marketplace.svg`
+- `public/images/illustrations/vps-server.svg`
+- `public/images/illustrations/cloud-services.svg`
+- `public/images/illustrations/giftcard.svg`
+- `public/images/illustrations/gamecard.svg`
+- `public/images/illustrations/promotion-banner.svg`
+- `public/images/illustrations/promotion-cloud.svg`
+- `public/images/illustrations/cta-marketplace.svg`
 
 ## Cài đặt local
 
@@ -313,6 +370,12 @@ Script này sẽ:
 - khi sửa code lúc dev server đang chạy, Next.js sẽ tự hot reload
 - không cần chạy lại `npm run dev` sau mỗi lần sửa giao diện hay logic thông thường
 - nếu đổi dependency, script dev, env, hoặc config lớn thì nên chạy lại dev server
+- nếu gặp lỗi dev kiểu `404 chunk`, `layout.css 404`, `MODULE_NOT_FOUND` sau khi đổi route hoặc sửa file lớn, chạy:
+
+```bash
+npm run dev:reset
+npm run dev
+```
 
 Nếu cần chạy raw dev mặc định của Next.js:
 
@@ -324,6 +387,7 @@ npm run dev:raw
 
 ```bash
 npm run dev
+npm run dev:reset
 npm run dev:raw
 npm run build
 npm run start

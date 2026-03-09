@@ -71,6 +71,17 @@ const baseUsers: SeedUser[] = [
     createdAt: "2025-09-12T09:00:00.000Z"
   },
   {
+    id: "staff-01",
+    email: "staff@meowmarket.vn",
+    fullName: "Ngô Thanh Vy",
+    phone: "0934567890",
+    avatarUrl: "TV",
+    role: UserRole.STAFF,
+    status: UserStatus.ACTIVE,
+    notificationsEnabled: true,
+    createdAt: "2026-02-14T08:45:00.000Z"
+  },
+  {
     id: "user-02",
     email: "ha.le@meowmarket.vn",
     fullName: "Lê Thu Hà",

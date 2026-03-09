@@ -45,6 +45,8 @@ export const userSidebarItems = [
 
 export const adminSidebarItems = [
   { label: "Tổng quan", href: "/admin", icon: "chart-line" },
+  { label: "Tài khoản admin", href: "/admin/account", icon: "user" },
+  { label: "Đổi mật khẩu", href: "/admin/security", icon: "lock" },
   { label: "Sản phẩm", href: "/admin/products", icon: "box-open" },
   { label: "Danh mục", href: "/admin/categories", icon: "grid" },
   { label: "Banner", href: "/admin/banners", icon: "images" },
@@ -62,4 +64,16 @@ export const adminSidebarItems = [
   { label: "Nhật ký hệ thống", href: "/admin/audit-log", icon: "list-check" },
   { label: "Công cụ AI", href: "/admin/ai-tools", icon: "robot" },
   { label: "Cài đặt", href: "/admin/settings", icon: "gear" }
+];
+
+export const staffSidebarItems = [
+  { label: "Tổng quan", href: "/staff", icon: "chart-line" },
+  { label: "Tài khoản nhân viên", href: "/staff/account", icon: "user" },
+  { label: "Đổi mật khẩu", href: "/staff/security", icon: "lock" },
+  { label: "Đơn hàng", href: "/staff/orders", icon: "receipt" },
+  { label: "Thanh toán", href: "/staff/payments", icon: "credit-card" },
+  { label: "Phiếu hỗ trợ", href: "/staff/tickets", icon: "life-ring" },
+  { label: "Gift Card", href: "/staff/giftcards", icon: "gift" },
+  { label: "Dịch vụ", href: "/staff/services", icon: "server" },
+  { label: "Thông báo", href: "/staff/notifications", icon: "bell" }
 ];

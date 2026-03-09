@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { getCurrentProfileData } from "@/services/profile-service";
 import { formatCurrency, formatDate } from "@/utils/format";
 
@@ -30,9 +31,12 @@ export async function ProfileOverview() {
               {user.email} • {user.phone}
             </p>
           </div>
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-black text-white">
-            {user.avatar}
-          </div>
+          <UserAvatar
+            fullName={user.fullName}
+            avatar={user.avatar}
+            size={80}
+            className="ring-4 ring-white/70"
+          />
         </div>
       </Card>
       <div className="grid gap-5 md:grid-cols-3">

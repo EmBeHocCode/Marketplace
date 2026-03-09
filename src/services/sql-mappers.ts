@@ -37,7 +37,7 @@ export function mapPrismaUser(user: {
   email: string;
   phone: string | null;
   avatarUrl: string | null;
-  role: "USER" | "ADMIN";
+  role: "USER" | "STAFF" | "ADMIN";
   status: "ACTIVE" | "SUSPENDED" | "BANNED";
   notificationsEnabled: boolean;
   createdAt: Date;
@@ -648,7 +648,7 @@ export function mapPrismaAuditLog(log: {
   createdAt: Date;
   actor: {
     fullName: string;
-    role: "USER" | "ADMIN";
+    role: "USER" | "STAFF" | "ADMIN";
   };
 }): AuditLog {
   return {
