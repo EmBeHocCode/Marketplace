@@ -1,12 +1,14 @@
-import { tickets } from "@/mock";
 import { Badge } from "@/components/ui/badge";
 import { Table } from "@/components/dashboard/table";
+import { getSupportTickets } from "@/services/ticket-service";
 import { formatDate } from "@/utils/format";
 
-export default function AdminTicketsRoute() {
+export default async function AdminTicketsRoute() {
+  const tickets = await getSupportTickets();
+
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-black text-ink">Ticket support</h1>
+      <h1 className="text-3xl font-black text-ink">Phiếu hỗ trợ</h1>
       <Table
         headers={["Tiêu đề", "Danh mục", "Ngày", "Trạng thái"]}
         rows={tickets.map((ticket) => [

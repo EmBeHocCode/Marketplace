@@ -4,10 +4,10 @@ import type { ProductType } from "@/types/domain";
 
 export const metadata: Metadata = {
   title: "Sản phẩm | MeowMarket",
-  description: "Danh sách VPS, cloud, gift card và thẻ game tại MeowMarket."
+  description: "Danh sách VPS, cloud, gift card và thẻ game trên MeowMarket."
 };
 
-export default function ProductsRoute({
+export default async function ProductsRoute({
   searchParams
 }: {
   searchParams: {
@@ -15,7 +15,10 @@ export default function ProductsRoute({
     category?: string;
     type?: ProductType;
     promotion?: string;
-    sort?: "featured" | "price-asc" | "price-desc" | "rating";
+    priceMin?: string;
+    priceMax?: string;
+    tag?: string;
+    sort?: "featured" | "price-asc" | "price-desc" | "rating" | "popularity" | "newest";
     page?: string;
   };
 }) {
@@ -25,6 +28,9 @@ export default function ProductsRoute({
       category={searchParams.category}
       type={searchParams.type}
       promotion={searchParams.promotion === "true"}
+      priceMin={searchParams.priceMin ? Number(searchParams.priceMin) : undefined}
+      priceMax={searchParams.priceMax ? Number(searchParams.priceMax) : undefined}
+      tag={searchParams.tag}
       sort={searchParams.sort}
       page={searchParams.page ? Number(searchParams.page) : 1}
     />

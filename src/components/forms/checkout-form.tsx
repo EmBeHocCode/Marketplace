@@ -49,7 +49,11 @@ export function CheckoutForm() {
         <Button type="submit" disabled={isSubmitting}>
           Xác nhận thanh toán
         </Button>
-        {submitted ? <p className="text-sm text-emerald-600">Đơn mock đã sẵn sàng chuyển qua payment gateway.</p> : null}
+        {submitted ? (
+          <p className="text-sm text-emerald-600">
+            Đơn hàng mẫu đã sẵn sàng chuyển sang cổng thanh toán.
+          </p>
+        ) : null}
       </form>
     </Card>
   );

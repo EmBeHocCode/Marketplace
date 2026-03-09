@@ -5,3 +5,5 @@ coverage
 dist
 *.log
 prisma/dev.db
+data/mock-auth-users.json
+tsconfig.tsbuildinfo

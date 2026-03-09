@@ -9,7 +9,7 @@ export function Logo() {
         <FontAwesomeIcon icon={faCat} className="h-5 w-5" />
       </div>
       <div>
-        <p className="font-semibold uppercase tracking-[0.24em] text-muted">Marketplace</p>
+        <p className="font-semibold uppercase tracking-[0.24em] text-muted">SÀN DỊCH VỤ SỐ</p>
         <p className="text-2xl font-black text-ink">MeowMarket</p>
       </div>
     </Link>

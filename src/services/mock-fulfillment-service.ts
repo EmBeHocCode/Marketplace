@@ -1,103 +1,129 @@
-import { orders, products } from "@/mock";
-import type { GiftCardCode, Order, Product, VpsService } from "@/types/domain";
+import { prisma } from "@/lib/prisma";
+import { getOrderByCode } from "@/services/order-service";
 
-const giftCardInventory: GiftCardCode[] = [
-  {
-    id: "inventory-01",
-    productId: "prod-steam-wallet",
-    code: "STEAM-44A2-PLK9-XT82",
-    status: "AVAILABLE",
-    createdAt: "2026-02-01T10:00:00.000Z"
-  },
-  {
-    id: "inventory-02",
-    productId: "prod-google-play",
-    code: "GOOGLE-7D9F-21LP-AR4Q",
-    status: "AVAILABLE",
-    createdAt: "2026-02-02T10:00:00.000Z"
-  },
-  {
-    id: "inventory-03",
-    productId: "prod-garena",
-    code: "GARENA-18HF-QW92-ZK31",
-    status: "AVAILABLE",
-    createdAt: "2026-02-03T10:00:00.000Z"
-  }
-];
-
-function findProduct(productId: string): Product | undefined {
-  return products.find((product) => product.id === productId);
-}
-
-export function allocateGiftCardCodes(order: Order) {
-  const assignedCodes: GiftCardCode[] = [];
-
-  order.items.forEach((item) => {
-    const product = findProduct(item.productId);
-    if (!product || !["GIFTCARD", "GAMECARD"].includes(product.type)) {
-      return;
-    }
-
-    const availableCode = giftCardInventory.find(
-      (code) => code.productId === item.productId && code.status === "AVAILABLE"
-    );
-
-    if (availableCode) {
-      availableCode.status = "SOLD";
-      assignedCodes.push({
-        ...availableCode,
-        createdAt: new Date().toISOString()
-      });
+export async function completeOrderWithFulfillment(orderCode: string) {
+  const order = await prisma.order.findUnique({
+    where: { orderCode },
+    include: {
+      items: {
+        include: {
+          product: true
+        }
+      },
+      payment: true,
+      giftCardCodes: true,
+      serviceRecords: {
+        include: {
+          vpsInstance: true,
+          product: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
     }
   });
-
-  return assignedCodes;
-}
-
-export function provisionMockVps(order: Order, userId: string) {
-  const services: VpsService[] = [];
-
-  order.items.forEach((item, index) => {
-    const product = findProduct(item.productId);
-    if (!product || product.type !== "VPS") {
-      return;
-    }
-
-    services.push({
-      id: `vps-generated-${index + 1}`,
-      productId: product.id,
-      orderId: order.id,
-      productName: product.name,
-      ipAddress: `103.14.21.${120 + index}`,
-      username: "root",
-      password: `Meow@${userId.slice(-2)}${index + 1}`,
-      status: "ACTIVE",
-      panelUrl: `https://panel.meowmarket.vn/services/${product.slug}`
-    });
-  });
-
-  return services;
-}
-
-export function completeOrderWithFulfillment(orderCode: string) {
-  const order = orders.find((item) => item.orderCode === orderCode);
 
   if (!order) {
     return null;
   }
 
-  const assignedCodes = allocateGiftCardCodes(order);
-  const provisionedVps = provisionMockVps(order, order.userId);
+  if (order.payment && order.payment.status !== "SUCCESS") {
+    await prisma.payment.update({
+      where: { id: order.payment.id },
+      data: {
+        status: "SUCCESS",
+        paidAt: new Date(),
+        callbackLog: [
+          `Gateway ${order.payment.gateway} xác nhận thành công lúc ${new Date().toISOString()}`
+        ]
+      }
+    });
+  }
 
-  return {
-    ...order,
-    status: "COMPLETED" as const,
-    assignedCodes,
-    provisionedVps,
-    emailDispatch: {
-      sent: true,
-      to: "user@meowmarket.vn",
-      template: "gift-card-delivery"
+  for (const item of order.items) {
+    if (["GIFTCARD", "GAMECARD"].includes(item.product.type)) {
+      const availableCodes = await prisma.giftCardCode.findMany({
+        where: {
+          productId: item.productId,
+          status: "AVAILABLE"
+        },
+        orderBy: {
+          createdAt: "asc"
+        },
+        take: item.quantity
+      });
+
+      for (const code of availableCodes) {
+        await prisma.giftCardCode.update({
+          where: { id: code.id },
+          data: {
+            status: "SOLD",
+            orderId: order.id,
+            reservedAt: code.reservedAt ?? new Date(),
+            soldAt: new Date()
+          }
+        });
+      }
     }
-  };
+
+    if (["VPS", "CLOUD"].includes(item.product.type)) {
+      const existingRecord = order.serviceRecords.find((record) => record.productId === item.productId);
+      if (!existingRecord) {
+        const serviceRecord = await prisma.serviceRecord.create({
+          data: {
+            userId: order.userId,
+            orderId: order.id,
+            productId: item.productId,
+            type: item.product.type === "VPS" ? "VPS" : "CLOUD",
+            serviceName: `${item.product.name} - Auto Provision`,
+            status: item.product.type === "VPS" ? "ACTIVE" : "PROCESSING",
+            renewAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+            deliveryLog: [
+              "Tạo service record",
+              item.product.type === "VPS" ? "Khởi tạo máy chủ" : "Đang chuẩn bị cloud node"
+            ]
+          }
+        });
+
+        if (item.product.type === "VPS") {
+          await prisma.vpsInstance.create({
+            data: {
+              userId: order.userId,
+              productId: item.productId,
+              serviceRecordId: serviceRecord.id,
+              ipAddress: `103.14.21.${120 + Math.floor(Math.random() * 40)}`,
+              username: "root",
+              password: `Meow@${order.userId.slice(-4)}`,
+              controlPanelUrl: `https://panel.meowmarket.vn/services/${serviceRecord.id}`,
+              status: "ACTIVE",
+              renewDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+            }
+          });
+        }
+      }
+    }
+  }
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      status: "COMPLETED",
+      completedAt: new Date()
+    }
+  });
+
+  await prisma.notification.create({
+    data: {
+      userId: order.userId,
+      title: "Đơn hàng đã hoàn tất",
+      description: `Đơn ${order.orderCode} đã hoàn tất và dữ liệu giao hàng số đã cập nhật.`,
+      type: "ORDER",
+      level: "SUCCESS",
+      link: `/profile/orders/${order.orderCode}`
+    }
+  });
+
+  return getOrderByCode(orderCode);
 }

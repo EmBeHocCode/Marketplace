@@ -1,83 +1,193 @@
-import { orders, products, users } from "@/mock";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { runSafeDbQuery } from "@/services/db-utils";
 import { validateCoupon } from "@/services/payment-service";
+import { mapPrismaOrder } from "@/services/sql-mappers";
 import type { Order } from "@/types/domain";
 
-export function getOrders() {
-  return orders;
+const orderInclude = {
+  items: {
+    include: {
+      product: {
+        select: {
+          name: true,
+          slug: true
+        }
+      }
+    }
+  },
+  payment: true,
+  giftCardCodes: true,
+  supportTickets: {
+    select: {
+      id: true
+    }
+  },
+  serviceRecords: {
+    include: {
+      product: {
+        select: {
+          name: true
+        }
+      },
+      vpsInstance: true
+    }
+  }
+} satisfies Prisma.OrderInclude;
+
+export async function getOrders() {
+  return runSafeDbQuery<Order[]>([], async () => {
+    const orders = await prisma.order.findMany({
+      include: orderInclude,
+      orderBy: [{ createdAt: "desc" }]
+    });
+
+    return orders.map(mapPrismaOrder);
+  });
 }
 
-export function getRecentOrders() {
-  return [...orders].slice(0, 5);
+export async function getRecentOrders(limit = 5) {
+  return runSafeDbQuery<Order[]>([], async () => {
+    const orders = await prisma.order.findMany({
+      include: orderInclude,
+      orderBy: [{ createdAt: "desc" }],
+      take: limit
+    });
+
+    return orders.map(mapPrismaOrder);
+  });
 }
 
-export function getOrdersByUser(userId: string) {
-  return orders.filter((order) => order.userId === userId);
+export async function getOrdersByUser(userId: string) {
+  return runSafeDbQuery<Order[]>([], async () => {
+    const orders = await prisma.order.findMany({
+      where: { userId },
+      include: orderInclude,
+      orderBy: [{ createdAt: "desc" }]
+    });
+
+    return orders.map(mapPrismaOrder);
+  });
 }
 
-export function getOrderByCode(orderCode: string) {
-  return orders.find(
-    (order) => order.orderCode.toLowerCase() === orderCode.toLowerCase()
-  );
+export async function getOrderByCode(orderCode: string) {
+  return runSafeDbQuery<Order | null>(null, async () => {
+    const order = await prisma.order.findUnique({
+      where: { orderCode },
+      include: orderInclude
+    });
+
+    return order ? mapPrismaOrder(order) : null;
+  });
 }
 
-export function getOrderById(orderId: string) {
-  return orders.find((order) => order.id === orderId);
+export async function getOrderById(orderId: string) {
+  return runSafeDbQuery<Order | null>(null, async () => {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: orderInclude
+    });
+
+    return order ? mapPrismaOrder(order) : null;
+  });
 }
 
-export function getOrderTotals(
+export async function getOrderTotals(
   items: Array<{ productId: string; quantity: number }>,
   couponCode?: string
 ) {
-  const subtotal = items.reduce((total, item) => {
-    const product = products.find((entry) => entry.id === item.productId);
-    if (!product) {
-      return total;
-    }
-    return total + product.price * item.quantity;
-  }, 0);
+  if (!items.length) {
+    return {
+      subtotal: 0,
+      coupon: null,
+      discount: 0,
+      total: 0
+    };
+  }
 
-  const { coupon, discount } = couponCode
-    ? validateCoupon(couponCode, subtotal)
-    : { coupon: null, discount: 0 };
+  return runSafeDbQuery(
+    {
+      subtotal: 0,
+      coupon: null,
+      discount: 0,
+      total: 0
+    },
+    async () => {
+      const productIds = [...new Set(items.map((item) => item.productId))];
+      const products = await prisma.product.findMany({
+        where: {
+          id: {
+            in: productIds
+          }
+        },
+        select: {
+          id: true,
+          price: true
+        }
+      });
+
+      const priceMap = new Map(products.map((product) => [product.id, Number(product.price)]));
+      const subtotal = items.reduce((total, item) => {
+        return total + (priceMap.get(item.productId) ?? 0) * item.quantity;
+      }, 0);
+
+      const { coupon, discount } = couponCode
+        ? await validateCoupon(couponCode, subtotal)
+        : { coupon: null, discount: 0 };
+
+      return {
+        subtotal,
+        coupon,
+        discount,
+        total: Math.max(0, subtotal - discount)
+      };
+    }
+  );
+}
+
+export function calculateOrderTotalsLocally(
+  items: Array<{ quantity: number; price: number }>,
+  discount = 0
+) {
+  const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return {
     subtotal,
-    coupon,
     discount,
     total: Math.max(0, subtotal - discount)
   };
 }
 
-export function getDashboardStats() {
-  const revenue = orders
-    .filter((order) => ["PAID", "PROCESSING", "COMPLETED"].includes(order.status))
-    .reduce((total, order) => total + order.total, 0);
-
-  return {
-    revenue,
-    orders: orders.length,
-    users: users.length,
-    conversionRate: 12.8
-  };
-}
-
-export function getBestSellingProducts() {
-  return products
-    .map((product) => {
-      const sold = orders.reduce((count, order) => {
-        const foundItem = order.items.find((item) => item.productId === product.id);
-        return count + (foundItem?.quantity ?? 0);
-      }, 0);
+export async function getDashboardStats() {
+  return runSafeDbQuery(
+    {
+      revenue: 0,
+      orders: 0,
+      users: 0,
+      conversionRate: 0
+    },
+    async () => {
+      const [revenueAggregate, ordersCount, usersCount] = await Promise.all([
+        prisma.order.aggregate({
+          where: {
+            status: {
+              in: ["PAID", "PROCESSING", "COMPLETED"]
+            }
+          },
+          _sum: {
+            total: true
+          }
+        }),
+        prisma.order.count(),
+        prisma.user.count()
+      ]);
 
       return {
-        ...product,
-        sold
+        revenue: Number(revenueAggregate._sum.total ?? 0),
+        orders: ordersCount,
+        users: usersCount,
+        conversionRate: usersCount ? Number(((ordersCount / usersCount) * 100).toFixed(1)) : 0
       };
-    })
-    .sort((a, b) => b.sold - a.sold)
-    .slice(0, 5);
-}
-
-export function createMockOrder(order: Order) {
-  return order;
+    }
+  );
 }

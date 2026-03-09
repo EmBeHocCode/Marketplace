@@ -8,6 +8,8 @@ export const users: User[] = [
     phone: "0901234567",
     avatar: "MA",
     role: "USER",
+    status: "ACTIVE",
+    notificationsEnabled: true,
     joinedAt: "2025-09-12T09:00:00.000Z"
   },
   {
@@ -17,6 +19,8 @@ export const users: User[] = [
     phone: "0987654321",
     avatar: "BC",
     role: "ADMIN",
+    status: "ACTIVE",
+    notificationsEnabled: true,
     joinedAt: "2025-04-18T09:00:00.000Z"
   }
 ];

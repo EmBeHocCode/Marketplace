@@ -1,4 +1,6 @@
-import { Coupon, PaymentMethod } from "@/types/domain";
+import { prisma } from "@/lib/prisma";
+import { runSafeDbQuery } from "@/services/db-utils";
+import type { Coupon, PaymentMethod } from "@/types/domain";
 
 export const paymentMethods: Array<{
   id: PaymentMethod;
@@ -12,7 +14,7 @@ export const paymentMethods: Array<{
   },
   {
     id: "MOMO",
-    name: "Momo",
+    name: "MoMo",
     description: "Ví điện tử phổ biến, xác nhận giao dịch nhanh."
   },
   {
@@ -27,31 +29,64 @@ export const paymentMethods: Array<{
   }
 ];
 
-export const coupons: Coupon[] = [
-  {
-    id: "coupon-01",
-    code: "MEOW10",
-    description: "Giảm 10% cho user mới",
-    discountType: "PERCENT",
-    discountValue: 10,
-    minOrderValue: 200000,
-    isActive: true
-  },
-  {
-    id: "coupon-02",
-    code: "CLOUD30",
-    description: "Giảm 30.000đ cho cloud products",
-    discountType: "FIXED",
-    discountValue: 30000,
-    minOrderValue: 400000,
-    isActive: true
-  }
-];
+function mapCoupon(coupon: {
+  id: string;
+  code: string;
+  description: string | null;
+  discountType: string;
+  discountValue: { toNumber: () => number };
+  minOrderValue: { toNumber: () => number } | null;
+  usageLimit: number | null;
+  isActive: boolean;
+}): Coupon {
+  return {
+    id: coupon.id,
+    code: coupon.code,
+    description: coupon.description ?? "",
+    discountType: coupon.discountType as Coupon["discountType"],
+    discountValue: coupon.discountValue.toNumber(),
+    minOrderValue: coupon.minOrderValue?.toNumber() ?? 0,
+    usageLimit: coupon.usageLimit ?? undefined,
+    isActive: coupon.isActive
+  };
+}
 
-export function validateCoupon(code: string, subtotal: number) {
-  const coupon = coupons.find(
-    (item) => item.code.toLowerCase() === code.toLowerCase() && item.isActive
-  );
+export async function getCoupons() {
+  return runSafeDbQuery<Coupon[]>([], async () => {
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        endsAt: {
+          gte: new Date()
+        }
+      },
+      orderBy: [{ startsAt: "asc" }]
+    });
+
+    return coupons.map(mapCoupon);
+  });
+}
+
+export async function validateCoupon(code: string, subtotal: number) {
+  const coupon = await runSafeDbQuery<Coupon | null>(null, async () => {
+    const record = await prisma.coupon.findFirst({
+      where: {
+        code: {
+          equals: code,
+          mode: "insensitive"
+        },
+        isActive: true,
+        startsAt: {
+          lte: new Date()
+        },
+        endsAt: {
+          gte: new Date()
+        }
+      }
+    });
+
+    return record ? mapCoupon(record) : null;
+  });
 
   if (!coupon) {
     return { coupon: null, discount: 0 };

@@ -1,28 +1,31 @@
-import { faqs } from "@/mock";
 import { ProductCard } from "@/components/product/product-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FAQAccordion } from "@/components/ui/faq-accordion";
+import { getFaqs } from "@/services/content-service";
 import { getProductBySlug, getProductReviews, getRelatedProducts } from "@/services/product-service";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { EmptyState } from "@/components/ui/empty-state";
 
-export function ProductDetailPage({ slug }: { slug: string }) {
-  const product = getProductBySlug(slug);
+export async function ProductDetailPage({ slug }: { slug: string }) {
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     return (
-      <EmptyState
-        title="Không tìm thấy sản phẩm"
-        description="Slug không khớp với dữ liệu mock hiện tại."
-        ctaLabel="Quay lại danh sách"
-      />
-    );
+        <EmptyState
+          title="Không tìm thấy sản phẩm"
+          description="Sản phẩm này chưa tồn tại trong cơ sở dữ liệu hoặc đã bị gỡ khỏi cửa hàng."
+          ctaLabel="Quay lại danh sách"
+        />
+      );
   }
 
-  const relatedProducts = getRelatedProducts(product.id);
-  const reviews = getProductReviews(product.id);
+  const [relatedProducts, reviews, faqs] = await Promise.all([
+    getRelatedProducts(product.id),
+    getProductReviews(product.id),
+    getFaqs()
+  ]);
 
   return (
     <div className="space-y-8">
@@ -59,14 +62,15 @@ export function ProductDetailPage({ slug }: { slug: string }) {
             </Button>
           </div>
           <div className="rounded-[24px] bg-rose-50 p-4 text-sm leading-7 text-muted">
-            Với gift card, mã sẽ hiển thị trong order detail. Với VPS, instance sẽ xuất hiện ở My Services sau khi đơn hoàn tất.
+            Với gift card, mã sẽ hiển thị trong chi tiết đơn hàng. Với VPS, máy chủ sẽ xuất hiện
+            ở mục Dịch vụ của tôi sau khi đơn hoàn tất.
           </div>
         </Card>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
-          <h2 className="text-2xl font-bold text-ink">Review khách hàng</h2>
+          <h2 className="text-2xl font-bold text-ink">Đánh giá khách hàng</h2>
           <div className="mt-6 space-y-4">
             {reviews.map((review) => (
               <div key={review.id} className="rounded-[24px] border border-rose-100 p-4">
@@ -94,11 +98,18 @@ export function ProductDetailPage({ slug }: { slug: string }) {
 
       <section className="space-y-6">
         <h2 className="text-3xl font-bold text-ink">Sản phẩm tương tự</h2>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {relatedProducts.map((relatedProduct) => (
-            <ProductCard key={relatedProduct.id} product={relatedProduct} />
-          ))}
-        </div>
+        {relatedProducts.length ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {relatedProducts.map((relatedProduct) => (
+              <ProductCard key={relatedProduct.id} product={relatedProduct} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="Chưa có sản phẩm tương tự"
+            description="Cơ sở dữ liệu hiện chưa có thêm sản phẩm cùng nhóm để đề xuất."
+          />
+        )}
       </section>
     </div>
   );

@@ -3,5 +3,5 @@ export function LoadingSkeleton({
 }: {
   className?: string;
 }) {
-  return <div className={`animate-pulse rounded-2xl bg-slate-200 ${className}`} />;
+  return <div className={`shimmer-bg animate-shimmer rounded-2xl ${className}`} />;
 }

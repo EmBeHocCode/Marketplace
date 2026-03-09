@@ -1,27 +1,56 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { OrderSummary } from "@/components/forms/order-summary";
-import { getOrderTotals } from "@/services/order-service";
+import { calculateOrderTotals } from "@/utils/order-totals";
 import { formatCurrency } from "@/utils/format";
 
 export function CartPage() {
   const { items, couponCode, updateQuantity, removeItem, setCouponCode } = useCartStore();
+  const [discount, setDiscount] = useState(0);
+
+  const subtotal = useMemo(
+    () => calculateOrderTotals(items.map((item) => ({ price: item.price, quantity: item.quantity }))).subtotal,
+    [items]
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    fetch("/api/coupons/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        code: couponCode,
+        subtotal
+      })
+    })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (mounted) {
+          setDiscount(Number(payload.discount ?? 0));
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setDiscount(0);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [couponCode, subtotal]);
 
   const totals = useMemo(
-    () =>
-      getOrderTotals(
-        items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity
-        })),
-        couponCode
-      ),
-    [items, couponCode]
+    () => calculateOrderTotals(items.map((item) => ({ price: item.price, quantity: item.quantity })), discount),
+    [discount, items]
   );
 
   if (!items.length) {

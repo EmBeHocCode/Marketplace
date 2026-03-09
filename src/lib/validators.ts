@@ -1,9 +1,10 @@
 import { z } from "zod";
 
+export * from "@/validators";
+
 export const loginSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
-  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
-  role: z.enum(["USER", "ADMIN"])
+  password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự")
 });
 
 export const registerSchema = z
@@ -27,7 +28,7 @@ export const contactSchema = z.object({
 });
 
 export const ticketSchema = z.object({
-  subject: z.string().min(4, "Nhập tiêu đề ticket"),
+  subject: z.string().min(4, "Nhập tiêu đề phiếu hỗ trợ"),
   category: z.string().min(2, "Chọn danh mục"),
   message: z.string().min(10, "Mô tả chi tiết hơn")
 });

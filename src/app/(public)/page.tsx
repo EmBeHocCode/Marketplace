@@ -1,5 +1,5 @@
 import { HomePage } from "@/modules/home/home-page";
 
-export default function HomeRoute() {
+export default async function HomeRoute() {
   return <HomePage />;
 }

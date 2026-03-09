@@ -1,40 +1,86 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/lib/validators";
 import type { LoginFormValues } from "@/types/forms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { serializeSessionUser } from "@/services/auth-service";
 
-export function LoginForm({ role = "USER" }: { role?: "USER" | "ADMIN" }) {
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") ?? (role === "ADMIN" ? "/admin" : "/profile");
+export function LoginForm({
+  presetEmail,
+  presetPassword,
+  redirect,
+  registered
+}: {
+  presetEmail: string;
+  presetPassword: string;
+  redirect?: string;
+  registered?: boolean;
+}) {
+  const router = useRouter();
   const [serverMessage, setServerMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-    watch
+    reset,
+    formState: { errors, isSubmitting }
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: role === "ADMIN" ? "admin@meowmarket.vn" : "user@meowmarket.vn",
-      password: "123456",
-      role
+      email: presetEmail,
+      password: presetPassword
     }
   });
 
-  const currentRole = watch("role");
+  useEffect(() => {
+    reset({
+      email: presetEmail,
+      password: presetPassword
+    });
+
+    if (registered) {
+      setMessageTone("success");
+      setServerMessage("Đăng ký thành công. Hãy đăng nhập để tiếp tục.");
+      return;
+    }
+
+    setServerMessage("");
+  }, [presetEmail, presetPassword, registered, reset]);
 
   const onSubmit = async (values: LoginFormValues) => {
-    document.cookie = `meowmarket-session=${values.email}; path=/`;
-    document.cookie = `meowmarket-role=${values.role}; path=/`;
-    setServerMessage("Đăng nhập mock thành công. Đang chuyển hướng...");
-    window.location.href = redirect;
+    setServerMessage("");
+
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(values)
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || !payload.success) {
+      setMessageTone("error");
+      setServerMessage(payload.message ?? "Đăng nhập thất bại.");
+      return;
+    }
+
+    document.cookie = `meowmarket-session=${payload.session.token}; path=/`;
+    document.cookie = `meowmarket-role=${payload.user.role}; path=/`;
+    document.cookie = `meowmarket-user=${serializeSessionUser(payload.user)}; path=/`;
+
+    setMessageTone("success");
+    setServerMessage("Đăng nhập thành công. Đang chuyển hướng...");
+    router.push(redirect ?? (payload.user.role === "ADMIN" ? "/admin" : "/profile"));
+    router.refresh();
   };
 
   return (
@@ -42,17 +88,10 @@ export function LoginForm({ role = "USER" }: { role?: "USER" | "ADMIN" }) {
       <div className="space-y-2">
         <h1 className="text-3xl font-black text-ink">Đăng nhập MeowMarket</h1>
         <p className="text-sm leading-7 text-muted">
-          Demo user: `user@meowmarket.vn` hoặc admin: `admin@meowmarket.vn`.
+          Dùng email và mật khẩu để đăng nhập. Hệ thống sẽ tự nhận diện tài khoản khách hàng hoặc quản trị viên.
         </p>
       </div>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <select
-          {...register("role")}
-          className="w-full rounded-2xl border border-rose-100 px-4 py-3 outline-none"
-        >
-          <option value="USER">Khách hàng</option>
-          <option value="ADMIN">Quản trị viên</option>
-        </select>
         <input
           {...register("email")}
           placeholder="Email"
@@ -66,10 +105,24 @@ export function LoginForm({ role = "USER" }: { role?: "USER" | "ADMIN" }) {
           className="w-full rounded-2xl border border-rose-100 px-4 py-3 outline-none"
         />
         {errors.password ? <p className="text-sm text-rose-500">{errors.password.message}</p> : null}
+        <div className="flex items-center justify-between text-sm">
+          <Link href="/forgot-password" className="text-primary">
+            Quên mật khẩu?
+          </Link>
+          <Link href="/register" className="text-muted">
+            Chưa có tài khoản?
+          </Link>
+        </div>
         <Button type="submit" disabled={isSubmitting}>
-          Đăng nhập {currentRole === "ADMIN" ? "admin" : "user"}
+          Đăng nhập
         </Button>
-        {serverMessage ? <p className="text-sm text-emerald-600">{serverMessage}</p> : null}
+        {serverMessage ? (
+          <p
+            className={`text-sm ${messageTone === "error" ? "text-rose-500" : "text-emerald-600"}`}
+          >
+            {serverMessage}
+          </p>
+        ) : null}
       </form>
     </Card>
   );

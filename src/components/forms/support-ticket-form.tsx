@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export function SupportTicketForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const {
     register,
     handleSubmit,
@@ -18,13 +19,32 @@ export function SupportTicketForm() {
     resolver: zodResolver(ticketSchema)
   });
 
-  const onSubmit = async () => {
-    setSubmitted(true);
+  const onSubmit = async (values: TicketFormValues) => {
+    setServerMessage("");
+
+    const response = await fetch("/api/support", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(values)
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || !payload.success) {
+      setMessageTone("error");
+      setServerMessage(payload.message ?? "Không thể tạo phiếu hỗ trợ.");
+      return;
+    }
+
+    setMessageTone("success");
+    setServerMessage("Phiếu hỗ trợ đã được ghi vào cơ sở dữ liệu và xuất hiện trong trang cá nhân.");
   };
 
   return (
     <Card>
-      <h3 className="text-2xl font-bold text-ink">Tạo ticket hỗ trợ</h3>
+      <h3 className="text-2xl font-bold text-ink">Tạo phiếu hỗ trợ</h3>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <input
           {...register("subject")}
@@ -39,7 +59,7 @@ export function SupportTicketForm() {
           <option value="">Chọn danh mục</option>
           <option value="VPS">VPS</option>
           <option value="Cloud">Cloud</option>
-          <option value="Gift Card">Gift Card</option>
+          <option value="Gift Card">Gift card</option>
           <option value="Thanh toán">Thanh toán</option>
         </select>
         {errors.category ? <p className="text-sm text-rose-500">{errors.category.message}</p> : null}
@@ -51,9 +71,13 @@ export function SupportTicketForm() {
         />
         {errors.message ? <p className="text-sm text-rose-500">{errors.message.message}</p> : null}
         <Button type="submit" disabled={isSubmitting}>
-          Gửi ticket
+          Gửi phiếu hỗ trợ
         </Button>
-        {submitted ? <p className="text-sm text-emerald-600">Ticket mock đã được ghi nhận.</p> : null}
+        {serverMessage ? (
+          <p className={`text-sm ${messageTone === "error" ? "text-rose-500" : "text-emerald-600"}`}>
+            {serverMessage}
+          </p>
+        ) : null}
       </form>
     </Card>
   );

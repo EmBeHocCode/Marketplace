@@ -8,12 +8,12 @@ export async function GET(request: Request) {
 
   if (orderCode) {
     return NextResponse.json({
-      order: getOrderByCode(orderCode) ?? null
+      order: (await getOrderByCode(orderCode)) ?? null
     });
   }
 
   return NextResponse.json({
-    orders: getOrders()
+    orders: await getOrders()
   });
 }
 
@@ -22,6 +22,6 @@ export async function POST(request: Request) {
   const orderCode = body.orderCode as string;
 
   return NextResponse.json({
-    order: completeOrderWithFulfillment(orderCode)
+    order: await completeOrderWithFulfillment(orderCode)
   });
 }

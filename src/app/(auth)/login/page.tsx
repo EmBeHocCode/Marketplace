@@ -3,13 +3,24 @@ import { LoginForm } from "@/components/forms/login-form";
 
 export const metadata: Metadata = {
   title: "Đăng nhập | MeowMarket",
-  description: "Đăng nhập user hoặc admin với validation."
+  description: "Đăng nhập vào tài khoản MeowMarket với validation."
 };
 
 export default function LoginRoute({
   searchParams
 }: {
-  searchParams: { role?: "USER" | "ADMIN" };
+  searchParams?: {
+    email?: string;
+    registered?: string;
+    redirect?: string;
+  };
 }) {
-  return <LoginForm role={searchParams.role === "ADMIN" ? "ADMIN" : "USER"} />;
+  return (
+    <LoginForm
+      presetEmail={searchParams?.email ?? "user@meowmarket.vn"}
+      presetPassword={searchParams?.registered === "1" ? "" : "123456"}
+      redirect={searchParams?.redirect}
+      registered={searchParams?.registered === "1"}
+    />
+  );
 }

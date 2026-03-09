@@ -1,12 +1,23 @@
-import { orders, products } from "@/mock";
-import { getCurrentUser } from "@/services/auth-service";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { getCurrentProfileData } from "@/services/profile-service";
 import { formatCurrency, formatDate } from "@/utils/format";
 
-export function ProfileOverview() {
-  const user = getCurrentUser("USER");
-  const latestOrder = orders[0];
+export async function ProfileOverview() {
+  const profile = await getCurrentProfileData();
+  const user = profile.user;
+
+  if (!user) {
+    return (
+      <EmptyState
+        title="Không đọc được thông tin tài khoản"
+        description="Phiên đăng nhập hiện tại không hợp lệ. Hãy đăng nhập lại để tiếp tục."
+        ctaLabel="Đăng nhập lại"
+        ctaLink="/login"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -27,31 +38,40 @@ export function ProfileOverview() {
       <div className="grid gap-5 md:grid-cols-3">
         <Card>
           <p className="text-sm text-muted">Tổng đơn hàng</p>
-          <p className="mt-3 text-3xl font-black text-ink">{orders.length}</p>
+          <p className="mt-3 text-3xl font-black text-ink">{profile.orders.length}</p>
         </Card>
         <Card>
           <p className="text-sm text-muted">Đã chi tiêu</p>
           <p className="mt-3 text-3xl font-black text-ink">
-            {formatCurrency(orders.reduce((sum, order) => sum + order.total, 0))}
+            {formatCurrency(profile.spentTotal)}
           </p>
         </Card>
         <Card>
           <p className="text-sm text-muted">Sản phẩm yêu thích</p>
-          <p className="mt-3 text-3xl font-black text-ink">{products.slice(0, 3).length}</p>
+          <p className="mt-3 text-3xl font-black text-ink">{profile.wishlistProducts.length}</p>
         </Card>
       </div>
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted">Đơn gần nhất</p>
-            <p className="mt-2 text-2xl font-bold text-ink">{latestOrder.orderCode}</p>
+      {profile.latestOrder ? (
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted">Đơn gần nhất</p>
+              <p className="mt-2 text-2xl font-bold text-ink">{profile.latestOrder.orderCode}</p>
+            </div>
+            <Badge label={profile.latestOrder.status} status={profile.latestOrder.status} />
           </div>
-          <Badge label={latestOrder.status} status={latestOrder.status} />
-        </div>
-        <p className="mt-4 text-sm leading-7 text-muted">
-          Tạo ngày {formatDate(latestOrder.createdAt)} với tổng thanh toán {formatCurrency(latestOrder.total)}.
-        </p>
-      </Card>
+          <p className="mt-4 text-sm leading-7 text-muted">
+            Tạo ngày {formatDate(profile.latestOrder.createdAt)} với tổng thanh toán {formatCurrency(profile.latestOrder.total)}.
+          </p>
+        </Card>
+      ) : (
+        <EmptyState
+          title="Tài khoản mới chưa có đơn hàng"
+          description="Khi bạn tạo đơn đầu tiên, thống kê thanh toán và timeline gần nhất sẽ xuất hiện tại đây."
+          ctaLabel="Khám phá sản phẩm"
+          ctaLink="/products"
+        />
+      )}
     </div>
   );
 }

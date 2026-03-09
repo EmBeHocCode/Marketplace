@@ -1,16 +1,20 @@
 import { FilterSidebar } from "@/components/product/filter-sidebar";
-import { ProductCard } from "@/components/product/product-card";
+import { ProductGrid } from "@/components/product/product-grid";
+import { SortBar } from "@/components/product/sort-bar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getProducts } from "@/services/product-service";
 import type { ProductType } from "@/types/domain";
 
-export function ProductListPage({
+export async function ProductListPage({
   q,
   category,
   type,
   promotion,
+  priceMin,
+  priceMax,
+  tag,
   sort,
   page
 }: {
@@ -18,14 +22,26 @@ export function ProductListPage({
   category?: string;
   type?: ProductType;
   promotion?: boolean;
-  sort?: "featured" | "price-asc" | "price-desc" | "rating";
+  priceMin?: number;
+  priceMax?: number;
+  tag?: string;
+  sort?:
+    | "featured"
+    | "price-asc"
+    | "price-desc"
+    | "rating"
+    | "popularity"
+    | "newest";
   page?: number;
 }) {
-  const result = getProducts({
+  const result = await getProducts({
     q,
     category,
     type,
     promotion,
+    priceMin,
+    priceMax,
+    tag,
     sort,
     page,
     pageSize: 9
@@ -37,19 +53,31 @@ export function ProductListPage({
     if (category) params.set("category", category);
     if (type) params.set("type", type);
     if (promotion) params.set("promotion", "true");
+    if (typeof priceMin === "number") params.set("priceMin", String(priceMin));
+    if (typeof priceMax === "number") params.set("priceMax", String(priceMax));
+    if (tag) params.set("tag", tag);
     if (sort) params.set("sort", sort);
     params.set("page", String(nextPage));
     return `/products?${params.toString()}`;
   };
 
   const createSortHref = (
-    nextSort: "featured" | "price-asc" | "price-desc" | "rating"
+    nextSort:
+      | "featured"
+      | "price-asc"
+      | "price-desc"
+      | "rating"
+      | "popularity"
+      | "newest"
   ) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (category) params.set("category", category);
     if (type) params.set("type", type);
     if (promotion) params.set("promotion", "true");
+    if (typeof priceMin === "number") params.set("priceMin", String(priceMin));
+    if (typeof priceMax === "number") params.set("priceMax", String(priceMax));
+    if (tag) params.set("tag", tag);
     params.set("sort", nextSort);
     params.set("page", "1");
     return `/products?${params.toString()}`;
@@ -59,8 +87,8 @@ export function ProductListPage({
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Danh sách sản phẩm"
-        title="Marketplace rõ ràng với filter, sort và pagination"
-        description="Search theo tên, category, product type. Layout ưu tiên cảm giác dễ dùng và tin cậy."
+        title="Danh sách sản phẩm rõ ràng với bộ lọc, sắp xếp và phân trang"
+        description="Tìm theo tên, danh mục, loại sản phẩm, mức giá và thẻ gắn. Bố cục được tối ưu để khách duyệt sản phẩm như một marketplace dịch vụ số thực thụ."
       />
       <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
         <FilterSidebar />
@@ -70,32 +98,11 @@ export function ProductListPage({
               <p className="text-sm text-muted">Kết quả</p>
               <p className="text-lg font-bold text-ink">{result.totalItems} sản phẩm</p>
             </div>
-            <div className="flex flex-wrap gap-3 text-sm">
-              {[
-                ["featured", "Nổi bật"],
-                ["price-asc", "Giá tăng dần"],
-                ["price-desc", "Giá giảm dần"],
-                ["rating", "Đánh giá cao"]
-              ].map(([value, label]) => (
-                <a
-                  key={value}
-                  href={createSortHref(
-                    value as "featured" | "price-asc" | "price-desc" | "rating"
-                  )}
-                  className="rounded-full bg-rose-50 px-4 py-2 text-ink"
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
+            <SortBar createHref={createSortHref} activeSort={sort} />
           </div>
           {result.items.length ? (
             <>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {result.items.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <ProductGrid products={result.items} />
               <Pagination
                 currentPage={result.currentPage}
                 totalPages={result.totalPages}
@@ -105,8 +112,9 @@ export function ProductListPage({
           ) : (
             <EmptyState
               title="Chưa có sản phẩm phù hợp"
-              description="Thử đổi bộ lọc hoặc từ khóa tìm kiếm để xem kết quả khác."
-              ctaLabel="Xem toàn bộ sản phẩm"
+              description="Thử đổi bộ lọc, khoảng giá hoặc từ khóa tìm kiếm để xem kết quả khác."
+              ctaLabel="Làm mới bộ lọc"
+              ctaLink="/products"
             />
           )}
         </div>

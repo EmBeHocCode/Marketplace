@@ -1,26 +1,12 @@
 "use client";
 
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const data = [
-  { name: "T2", revenue: 12000000 },
-  { name: "T3", revenue: 16800000 },
-  { name: "T4", revenue: 15400000 },
-  { name: "T5", revenue: 20200000 },
-  { name: "T6", revenue: 24800000 },
-  { name: "T7", revenue: 22100000 },
-  { name: "CN", revenue: 27100000 }
-];
-
-export function RevenueChart() {
+export function RevenueChart({
+  data
+}: {
+  data: Array<{ name: string; revenue: number }>;
+}) {
   return (
     <div className="h-[280px]">
       <ResponsiveContainer width="100%" height="100%">

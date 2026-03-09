@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
@@ -18,7 +19,7 @@ export function FAQAccordion({ items }: { items: FAQItem[] }) {
         return (
           <Card
             key={item.id}
-            className="cursor-pointer p-0"
+            className={cn("cursor-pointer p-0 transition", isOpen && "bg-rose-50/60")}
             onClick={() => setOpenId(isOpen ? "" : item.id)}
           >
             <div className="flex items-center justify-between gap-4 px-6 py-5">
@@ -31,11 +32,21 @@ export function FAQAccordion({ items }: { items: FAQItem[] }) {
                 className={cn("h-4 w-4 text-muted transition", isOpen && "rotate-180")}
               />
             </div>
-            {isOpen ? (
-              <div className="border-t border-rose-100 px-6 py-5 text-sm leading-7 text-muted">
-                {item.answer}
-              </div>
-            ) : null}
+            <AnimatePresence initial={false}>
+              {isOpen ? (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-rose-100 px-6 py-5 text-sm leading-7 text-muted">
+                    {item.answer}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </Card>
         );
       })}

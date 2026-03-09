@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export function RegisterForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
+  const [serverMessage, setServerMessage] = useState("");
   const {
     register,
     handleSubmit,
@@ -18,8 +21,27 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema)
   });
 
-  const onSubmit = async () => {
-    setSubmitted(true);
+  const onSubmit = async (values: RegisterFormValues) => {
+    setServerMessage("");
+
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(values)
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || !payload.success) {
+      setServerMessage(payload.message ?? "Đăng ký thất bại.");
+      return;
+    }
+
+    setServerMessage("Tạo tài khoản thành công. Đang chuyển hướng...");
+    router.push(`/login?registered=1&email=${encodeURIComponent(payload.user.email)}`);
+    router.refresh();
   };
 
   return (
@@ -41,10 +63,25 @@ export function RegisterForm() {
         {errors.password ? <p className="text-sm text-rose-500">{errors.password.message}</p> : null}
         <input type="password" {...register("confirmPassword")} placeholder="Xác nhận mật khẩu" className="w-full rounded-2xl border border-rose-100 px-4 py-3 outline-none" />
         {errors.confirmPassword ? <p className="text-sm text-rose-500">{errors.confirmPassword.message}</p> : null}
+        <div className="text-sm">
+          <Link href="/login" className="text-primary">
+            Đã có tài khoản? Đăng nhập
+          </Link>
+        </div>
         <Button type="submit" disabled={isSubmitting}>
           Đăng ký
         </Button>
-        {submitted ? <p className="text-sm text-emerald-600">Tài khoản mock đã được tạo.</p> : null}
+        {serverMessage ? (
+          <p
+            className={`text-sm ${
+              serverMessage.includes("thất bại") || serverMessage.includes("tồn tại")
+                ? "text-rose-500"
+                : "text-emerald-600"
+            }`}
+          >
+            {serverMessage}
+          </p>
+        ) : null}
       </form>
     </Card>
   );

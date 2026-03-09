@@ -39,19 +39,19 @@ const megaMenuItems = [
     title: "Khuyến mãi",
     href: "/products?promotion=true",
     icon: faTags,
-    items: ["Deal mới", "Combo cloud", "Gift card hot"]
+    items: ["Deal mới", "Combo cloud", "Gift card nổi bật"]
   },
   {
     title: "Hỗ trợ",
     href: "/support",
     icon: faHeadset,
-    items: ["FAQ", "Ticket", "Hướng dẫn mua"]
+    items: ["FAQ", "Phiếu hỗ trợ", "Hướng dẫn mua"]
   }
 ];
 
 export function MegaMenu() {
   return (
-    <Card className="absolute left-0 top-full z-30 mt-4 hidden w-[900px] grid-cols-3 gap-4 bg-white/95 backdrop-blur lg:grid">
+    <Card className="grid w-[900px] grid-cols-3 gap-4 bg-white/95 backdrop-blur">
       {megaMenuItems.map((section) => (
         <Link
           key={section.title}

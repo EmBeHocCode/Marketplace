@@ -1,4 +1,5 @@
 @import "@fortawesome/fontawesome-svg-core/styles.css";
+@import "@/styles/motion.css";
 
 @tailwind base;
 @tailwind components;
@@ -19,7 +20,7 @@ html {
 body {
   margin: 0;
   background: #f7f9fc;
-  color: #24314d;
+  color: #1f2937;
   font-family: var(--font-body), sans-serif;
 }
 
@@ -37,4 +38,8 @@ textarea {
 
 .brand-title {
   font-family: var(--font-display), sans-serif;
+}
+
+::selection {
+  background: rgba(255, 127, 169, 0.22);
 }

@@ -1,85 +1,41 @@
 # MeowMarket
 
-MeowMarket là website marketplace bán dịch vụ số cho thị trường Việt Nam, được xây dựng theo hướng dễ mở rộng thành nền tảng production sau này.
+MeowMarket là marketplace dịch vụ số cho thị trường Việt Nam, xây dựng bằng Next.js App Router theo hướng production-ready với dữ liệu lõi đã chạy trên PostgreSQL qua Prisma.
 
-UI theo định hướng:
+Định hướng giao diện:
+
 - cute
-- dễ thương
+- mềm mại
 - thân thiện
-- nhưng vẫn chuyên nghiệp như một startup công nghệ
+- hiện đại
+- đủ tin cậy cho flow mua hàng số, gift card, VPS và cloud
 
-Brand concept:
-- tông màu mềm mại với pink, soft blue, accent vàng
-- hình ảnh và chi tiết visual gợi nhớ chủ đề mèo
-- layout marketplace rõ ràng, dễ tìm kiếm, dễ mua và dễ quản lý đơn
+## Tổng quan hiện tại
 
-## Tính năng chính
+Project đã có:
 
-### Public site
-- Trang chủ có hero banner, danh mục nổi bật, sản phẩm hot, khuyến mãi, hướng dẫn mua hàng, review, FAQ, CTA
-- Trang danh sách sản phẩm có filter sidebar, sort, search, pagination
-- Trang chi tiết sản phẩm có thông tin giá, cấu hình, mô tả, FAQ, review, sản phẩm tương tự
-- Giỏ hàng với coupon và tổng tiền
-- Checkout với thông tin khách, payment method, order summary
-- Search sản phẩm tại header
-- Trang hỗ trợ, liên hệ, chính sách, tra cứu đơn hàng
-- Login / register với validation
+- public storefront
+- auth pages
+- user dashboard
+- admin dashboard
+- Next.js API routes
+- Prisma schema cho PostgreSQL
+- payment flow mock-ready
+- gift card fulfillment mock-ready
+- VPS provisioning mock-ready
+- media library
+- AI tools mock
 
-### User dashboard
-- Thông tin tài khoản
-- Đổi mật khẩu
-- Đơn hàng
-- Lịch sử thanh toán
-- Sản phẩm đã mua
-- Ticket hỗ trợ
-- Wishlist
-- My Services cho VPS đã provision
+Trạng thái dữ liệu hiện tại:
 
-### Admin dashboard
-- Dashboard overview
-- Product management
-- Order management
-- User management
-- Ticket support
-- Coupon management
-- Banner management
-- System settings
-- Charts bằng `recharts`
-
-### Backend-ready architecture
-- Tách `types`, `mock`, `services`, `components`, `layouts`, `modules`
-- Có `Next.js API routes` để mock backend layer ban đầu
-- Có `Prisma schema` cho PostgreSQL
-- Có `middleware` cho protected routes và role-based access
-- Sẵn sàng để tách backend riêng sau này, ví dụ NestJS
-
-## Nhóm sản phẩm
-
-- VPS
-  - VPS Basic
-  - VPS Gaming
-  - VPS Premium
-- Cloud
-  - Cloud Server
-  - Cloud GPU
-  - Cloud Gaming
-- Gift Card
-  - Steam Wallet
-  - Google Play
-  - App Store
-  - PSN
-  - Xbox
-  - Nintendo
-- Thẻ Game
-  - Garena
-  - Zing
-  - Vcoin
-  - SohaCoin
-  - Funcard
+- tài khoản, mật khẩu hash, session và password reset token đều nằm trong PostgreSQL
+- sản phẩm, danh mục, banner, FAQ, review, coupon, order, payment, ticket, notification, media, audit log đều đọc từ SQL
+- homepage metrics, admin charts và các thống kê chính đều tính từ dữ liệu SQL
+- seed hiện có sẵn dữ liệu mẫu nên web không bị trống
+- phần còn dùng mock chủ yếu là AI tools demo
 
 ## Tech stack
 
-### Frontend
 - Next.js 14 App Router
 - TypeScript
 - Tailwind CSS
@@ -87,20 +43,13 @@ Brand concept:
 - Zustand
 - React Hook Form
 - Zod
-
-### Data / backend layer
-- Next.js API Routes
+- Recharts
 - Prisma ORM
 - PostgreSQL
+- bcryptjs
+- Framer Motion
 
-### Dashboard / charts
-- Recharts
-
-### Deployment target
-- Frontend: Vercel
-- Backend / database: VPS hoặc infrastructure riêng
-
-## Cấu trúc thư mục
+## Cấu trúc chính
 
 ```text
 /src
@@ -114,8 +63,12 @@ Brand concept:
     /ui
     /layout
     /product
+    /checkout
     /dashboard
-    /forms
+    /admin
+    /support
+    /ai
+    /shared
   /layouts
   /modules
   /services
@@ -125,141 +78,166 @@ Brand concept:
   /mock
   /config
   /utils
+  /constants
+  /store
+  /validators
+  /emails
+  /providers
+  /assets
+  /styles
 /prisma
+/public
+/data
+/scripts
+/ai-service
 ```
 
 ## Route chính
 
 ### Public
+
 - `/`
 - `/products`
 - `/products/[slug]`
 - `/search`
 - `/cart`
 - `/checkout`
+- `/checkout/success`
+- `/checkout/failure`
 - `/support`
 - `/contact`
 - `/policies`
+- `/promotions`
+- `/about`
 - `/order-lookup`
+
+### Auth
+
 - `/login`
 - `/register`
+- `/forgot-password`
+- `/reset-password`
 
 ### User dashboard
+
 - `/profile`
 - `/profile/account`
 - `/profile/security`
 - `/profile/orders`
+- `/profile/orders/[orderCode]`
 - `/profile/payments`
 - `/profile/purchases`
 - `/profile/tickets`
+- `/profile/tickets/[ticketId]`
 - `/profile/wishlist`
 - `/profile/services`
+- `/profile/notifications`
 
-### Admin dashboard
+### Admin
+
 - `/admin`
 - `/admin/products`
+- `/admin/categories`
+- `/admin/banners`
 - `/admin/orders`
+- `/admin/payments`
 - `/admin/users`
 - `/admin/tickets`
 - `/admin/coupons`
-- `/admin/banners`
+- `/admin/giftcards`
+- `/admin/services`
+- `/admin/media`
+- `/admin/notifications`
+- `/admin/seo`
+- `/admin/audit-log`
+- `/admin/ai-tools`
 - `/admin/settings`
 
-### API routes
-- `/api/products`
-- `/api/orders`
-- `/api/search`
-- `/api/support`
-- `/api/gift-cards`
-- `/api/vps`
+## Dữ liệu và kiến trúc
 
-## Mock systems
+### Storefront sản phẩm
 
-### Gift card inventory
-Project đã có mock fulfillment logic cho gift card:
-- model logic: `GiftCardCode`
-- status:
-  - `AVAILABLE`
-  - `SOLD`
-  - `USED`
-- khi order hoàn tất:
-  - cấp code từ inventory
-  - hiển thị code trong order detail / order lookup flow
-  - mock thông tin gửi email code cho user
+- service chính: `src/services/product-service.ts`
+- dữ liệu public product đang đọc từ Prisma
+- seed mặc định hiện có sẵn 12 sản phẩm mẫu trong SQL
 
-File liên quan:
-- `src/services/mock-fulfillment-service.ts`
-- `prisma/schema.prisma`
+### Auth hiện tại
 
-### VPS provisioning
-Project đã có mock VPS flow:
-- Product type `VPS` có thêm:
-  - CPU
-  - RAM
-  - Storage
-  - Bandwidth
-  - OS
-- sau khi thanh toán:
-  - tạo VPS instance mock
-  - hiển thị trong `My Services`
-- thông tin hiển thị:
-  - IP address
-  - Username
-  - Password
-  - Status
-  - Control panel button
+- register/login hoạt động qua API routes
+- mật khẩu được hash bằng `bcryptjs`
+- tài khoản, session và reset token lưu trong PostgreSQL
+- session hiển thị nhanh qua cookie:
+  - `meowmarket-session`
+  - `meowmarket-role`
+  - `meowmarket-user`
+- file `data/mock-auth-users.json` chỉ còn là nguồn import legacy khi chạy seed cho môi trường dev cũ
 
-## Authentication mock
+### Dashboard user mới
 
-Hiện tại project đang dùng mock auth để demo protected routes:
-- cookie `meowmarket-session`
-- cookie `meowmarket-role`
-- middleware bảo vệ:
-  - `/profile/*`
-  - `/admin/*`
+Tài khoản mới đăng ký sẽ:
 
-Đăng nhập demo:
-- User:
+- chưa có đơn hàng
+- chưa có thanh toán
+- chưa có wishlist
+- chưa có sản phẩm đã mua
+- chưa có service
+
+### Prisma seed hiện tại
+
+`prisma/seed.ts` đang seed:
+
+- admin mặc định
+- user mặc định
+- import thêm các tài khoản legacy từ `data/mock-auth-users.json` nếu file còn tồn tại
+- category tree
+- site setting
+- banner
+- FAQ
+- coupon
+- 12 sản phẩm mẫu
+- review
+- favorite
+- order, order item, payment
+- gift card codes
+- service records và VPS instance
+- support tickets và ticket messages
+- notifications
+- media assets
+- audit logs
+
+## Tài khoản dev
+
+### Tài khoản mặc định
+
+- User
   - email: `user@meowmarket.vn`
   - password: `123456`
-- Admin:
+- Admin
   - email: `admin@meowmarket.vn`
   - password: `123456`
 
-Có thể thay bằng:
-- NextAuth
-- JWT auth
-- session service riêng
+### Register
 
-## Database schema
+- đăng ký thành công sẽ chuyển về `/login`
+- login sẽ dùng chính tài khoản vừa đăng ký
 
-Prisma schema đã được thiết kế cho các entity:
-- `User`
-- `Product`
-- `Category`
-- `Order`
-- `OrderItem`
-- `Payment`
-- `Coupon`
-- `SupportTicket`
-- `TicketMessage`
-- `Review`
-- `Banner`
-- `GiftCardCode`
-- `VpsInstance`
-- `WishlistItem`
+## Favicon và brand assets
 
-Enums chính:
-- `UserRole`
-- `ProductType`
-- `OrderStatus`
-- `PaymentStatus`
-- `PaymentMethod`
-- `TicketStatus`
-- `GiftCardCodeStatus`
-- `VpsInstanceStatus`
+Favicon hiện dùng nguồn từ:
 
-## Cài đặt và chạy local
+- `src/assets/favicons/favicon.gif`
+
+Project đang expose ra browser theo các file:
+
+- `public/favicon.ico`
+- `public/favicons/favicon.png`
+- `public/favicons/favicon.gif`
+
+Metadata favicon nằm tại:
+
+- `src/app/layout.tsx`
+
+## Cài đặt local
 
 ### 1. Cài dependency
 
@@ -273,143 +251,163 @@ npm install
 copy .env.example .env
 ```
 
-Nội dung mẫu:
+Ví dụ:
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/meowmarket"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-### 3. Generate Prisma client
+### 3. Khởi động PostgreSQL local
+
+```bash
+npm run db:start
+```
+
+### 4. Generate Prisma client
 
 ```bash
 npm run prisma:generate
 ```
 
-### 4. Chạy project
+### 5. Đồng bộ schema ra database
+
+```bash
+npm run db:push
+```
+
+### 6. Seed dữ liệu nền
+
+```bash
+npm run prisma:seed
+```
+
+### 7. Chạy project
 
 ```bash
 npm run dev
 ```
 
-Mở trên:
+Mặc định script này sẽ cố chạy tại:
 
 ```text
 http://localhost:3000
+```
+
+## Dev workflow
+
+`npm run dev` đã được đổi sang script:
+
+- `scripts/dev-single-instance.js`
+
+Script này sẽ:
+
+- dừng các tiến trình Next.js cũ của chính project
+- giải phóng port `3000`, `3001`, `3002`
+- xóa cache `.next`
+- chạy lại MeowMarket cố định ở `3000`
+
+Điểm cần lưu ý:
+
+- script có thể dừng app khác nếu app đó đang chiếm `3000`, `3001` hoặc `3002`
+- khi sửa code lúc dev server đang chạy, Next.js sẽ tự hot reload
+- không cần chạy lại `npm run dev` sau mỗi lần sửa giao diện hay logic thông thường
+- nếu đổi dependency, script dev, env, hoặc config lớn thì nên chạy lại dev server
+
+Nếu cần chạy raw dev mặc định của Next.js:
+
+```bash
+npm run dev:raw
 ```
 
 ## Scripts
 
 ```bash
 npm run dev
+npm run dev:raw
 npm run build
 npm run start
 npm run lint
+npm run db:start
+npm run db:stop
+npm run db:down
+npm run db:push
 npm run prisma:generate
 npm run prisma:migrate
+npm run prisma:seed
 ```
 
-## Code organization
+## Mock systems đang có
 
-### `src/mock`
-Chứa mock data tách riêng:
-- products
-- users
-- orders
-- tickets
-- banner
-- reviews
-- faqs
+### Gift card fulfillment
 
-### `src/services`
-Service layer để sau này thay bằng API thật:
-- `api-service.ts`
-- `product-service.ts`
-- `order-service.ts`
-- `auth-service.ts`
-- `payment-service.ts`
-- `ticket-service.ts`
-- `search-service.ts`
-- `mock-fulfillment-service.ts`
+- model: `GiftCardCode`
+- status:
+  - `AVAILABLE`
+  - `RESERVED`
+  - `SOLD`
+  - `USED`
+  - `EXPIRED`
+- flow mock:
+  - reserve code
+  - assign code vào order
+  - hiển thị code trong order detail
+  - sẵn cấu trúc để gửi email sau này
 
-### `src/modules`
-Gồm page-level UI logic:
-- home
-- products
-- checkout
-- support
-- profile
-- admin
+### VPS / Cloud fulfillment
 
-### `src/components`
-Phân tách component theo domain:
-- `ui`
-- `layout`
-- `product`
-- `dashboard`
-- `forms`
+- tạo `ServiceRecord`
+- tạo `VpsInstance` mock sau thanh toán
+- hiển thị trong `My Services`
+- sẵn cấu trúc để sau này gọi provider API thật
 
-## SEO
+### Payment mock
 
-Project đã có metadata cơ bản:
-- global metadata trong `src/app/layout.tsx`
-- page metadata cho các route chính
-
-## Performance direction
-
-Project đang theo hướng:
-- ưu tiên server components khi có thể
-- phân tách client components cho form, chart, state store
-- pagination cho danh sách
-- image layer có thể mở rộng bằng `next/image`
-- dễ lazy-load thêm cho dashboard widgets lớn nếu cần
-
-## Payment integration direction
-
-Structure đã sẵn sàng để gắn thêm payment gateways:
 - VNPay
-- Momo
+- MoMo
 - ZaloPay
-- Crypto payment
+- callback/webhook mock
+- success/failure pages
 
-Khi nâng cấp production, nên thêm:
-- payment adapter abstraction
-- webhook verification
-- transaction logs
-- retry strategy
-- idempotency handling
+## Những phần vẫn đang là mock
 
-## Deployment
+- đơn hàng mẫu trong dashboard
+- ticket mẫu
+- analytics mẫu
+- notification mẫu
+- một phần admin tables
+- AI insights mẫu
 
-### Frontend
-- deploy lên Vercel
+Những phần này đã được tách riêng để sau này thay bằng:
 
-### Backend / database
-- PostgreSQL và backend layer có thể deploy trên VPS
-- sau này có thể tách API backend riêng khỏi Next.js frontend
+- Prisma queries
+- CRUD APIs
+- queue / webhook / external provider integrations
 
-## Trạng thái hiện tại
+## Kiến trúc mở rộng tiếp theo
 
-Đã hoàn thành:
-- scaffold full project structure
-- public pages
-- auth pages
-- user dashboard
-- admin dashboard
-- mock API routes
-- Prisma schema
-- middleware protect routes
-- lint pass
-- production build pass
+- thay auth dev bằng Auth.js hoặc JWT thật
+- chuyển order, payment, ticket sang Prisma hoàn toàn
+- thêm product CRUD thật ở admin
+- upload media thật bằng Cloudinary hoặc S3
+- thêm seed sản phẩm SQL hoặc admin create product flow
+- gắn payment gateways thật
+- gắn email service thật
+- gắn VPS provisioning provider thật
+- kết nối Next.js API với FastAPI AI service
 
-## Hướng mở rộng tiếp theo
+## Kiểm tra chất lượng
 
-- tích hợp auth thật bằng NextAuth hoặc JWT
-- kết nối PostgreSQL thật và seed data Prisma
-- thêm upload banner / product image
-- thêm order detail page đầy đủ
-- thêm email service thật cho gift card delivery
-- thêm VPS provisioning adapter thật
-- thêm webhook payment cho VNPay, Momo, ZaloPay
-- thêm test automation
+Đã kiểm tra:
 
+- `npm run lint`
+- `npm run build`
+
+Ở trạng thái hiện tại, cả hai đều pass.
+
+## Giấy phép
+
+Project này được phát hành theo giấy phép MIT.
+
+- Xem chi tiết tại file `LICENSE`
+- Copyright (c) 2026 EmBeHocCode

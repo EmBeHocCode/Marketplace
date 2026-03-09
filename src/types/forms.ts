@@ -1,7 +1,6 @@
 export interface LoginFormValues {
   email: string;
   password: string;
-  role: "USER" | "ADMIN";
 }
 
 export interface RegisterFormValues {

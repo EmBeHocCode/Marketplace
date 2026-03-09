@@ -1,24 +1,53 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { CheckoutForm } from "@/components/forms/checkout-form";
 import { OrderSummary } from "@/components/forms/order-summary";
 import { Card } from "@/components/ui/card";
-import { getOrderTotals } from "@/services/order-service";
+import { calculateOrderTotals } from "@/utils/order-totals";
 
 export function CheckoutPage() {
   const { items, couponCode } = useCartStore();
+  const [discount, setDiscount] = useState(0);
+  const subtotal = useMemo(
+    () => calculateOrderTotals(items.map((item) => ({ price: item.price, quantity: item.quantity }))).subtotal,
+    [items]
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    fetch("/api/coupons/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        code: couponCode,
+        subtotal
+      })
+    })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (mounted) {
+          setDiscount(Number(payload.discount ?? 0));
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setDiscount(0);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [couponCode, subtotal]);
+
   const totals = useMemo(
-    () =>
-      getOrderTotals(
-        items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity
-        })),
-        couponCode
-      ),
-    [items, couponCode]
+    () => calculateOrderTotals(items.map((item) => ({ price: item.price, quantity: item.quantity })), discount),
+    [discount, items]
   );
 
   return (
@@ -33,7 +62,7 @@ export function CheckoutPage() {
         <Card>
           <h3 className="text-xl font-bold text-ink">Trạng thái</h3>
           <p className="mt-4 text-sm leading-7 text-muted">
-            Payment layer được tách riêng để tích hợp VNPay, Momo, ZaloPay và crypto sau này.
+            Lớp thanh toán được tách riêng để tích hợp VNPay, MoMo, ZaloPay và tiền mã hóa sau này.
           </p>
         </Card>
       </div>

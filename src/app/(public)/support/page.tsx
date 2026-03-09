@@ -3,7 +3,7 @@ import { SupportPage } from "@/modules/support/support-page";
 
 export const metadata: Metadata = {
   title: "Hỗ trợ | MeowMarket",
-  description: "FAQ, ticket form, hướng dẫn mua hàng và thanh toán."
+  description: "FAQ, biểu mẫu hỗ trợ, hướng dẫn mua hàng và thanh toán."
 };
 
 export default function SupportRoute() {

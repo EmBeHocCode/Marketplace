@@ -29,7 +29,7 @@ export function SearchBar({ compact = false }: { compact?: boolean }) {
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Tìm VPS, cloud, gift card..."
+        placeholder="Tìm VPS, cloud, gift card, thẻ game..."
         className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
       />
     </form>

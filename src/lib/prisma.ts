@@ -1,15 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 
 declare global {
-  var prisma: PrismaClient | undefined;
+  var __meowmarketPrisma__: PrismaClient | undefined;
 }
 
 export const prisma =
-  global.prisma ||
+  global.__meowmarketPrisma__ ??
   new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"]
+    log: process.env.NODE_ENV === "development" ? ["error"] : ["error"]
   });
 
 if (process.env.NODE_ENV !== "production") {
-  global.prisma = prisma;
+  global.__meowmarketPrisma__ = prisma;
 }

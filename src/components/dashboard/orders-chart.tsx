@@ -1,26 +1,12 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const data = [
-  { name: "T2", orders: 42 },
-  { name: "T3", orders: 58 },
-  { name: "T4", orders: 53 },
-  { name: "T5", orders: 76 },
-  { name: "T6", orders: 88 },
-  { name: "T7", orders: 71 },
-  { name: "CN", orders: 95 }
-];
-
-export function OrdersChart() {
+export function OrdersChart({
+  data
+}: {
+  data: Array<{ name: string; orders: number }>;
+}) {
   return (
     <div className="h-[280px]">
       <ResponsiveContainer width="100%" height="100%">
