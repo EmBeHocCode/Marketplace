@@ -1,5 +1,7 @@
 # MeowMarket
 
+Updated: `2026-03-11 15:27:52 ICT`
+
 MeowMarket là một marketplace dịch vụ số cho người dùng Việt Nam, xây dựng bằng Next.js App Router với PostgreSQL qua Prisma. Project hiện có đầy đủ storefront, auth, khu tài khoản người dùng, staff dashboard, admin dashboard và bộ dữ liệu seed để chạy local nhanh.
 
 ## Project hiện đang có gì
